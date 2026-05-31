@@ -1,0 +1,22 @@
+# Local transaction exports
+*.xlsx
+*.xls
+*.csv
+
+# Local secrets and deployment settings
+.env
+.env.*
+config.js
+secrets.*
+.clasp.json
+DEPLOYMENT_CHECKLIST.md
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.log
+
+# Dependencies/build output, if the project later grows
+node_modules/
+dist/
+build/

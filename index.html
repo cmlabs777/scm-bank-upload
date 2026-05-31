@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SCM 가계부 업로드</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <script src="./parser.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar" aria-label="앱 상단">
+        <div>
+          <p class="eyebrow">SCM</p>
+          <h1>가계부 업로드</h1>
+        </div>
+        <div class="status" id="connectionStatus">Apps Script URL 미설정</div>
+      </section>
+
+      <section class="panel" id="homeView">
+        <div class="home-actions" aria-label="첫 화면 메뉴">
+          <button class="primary-action" type="button" data-view="uploadView">
+            <span>업로드하기</span>
+            <small>카카오뱅크 엑셀 출금내역 검수</small>
+          </button>
+          <button class="secondary-action" type="button" data-view="typesView">
+            <span>유형</span>
+            <small>유형과 자동분류 규칙 관리</small>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="uploadView">
+        <div class="view-header">
+          <button class="text-button" type="button" data-view="homeView">← 처음으로</button>
+          <div>
+            <h2>거래내역 업로드</h2>
+            <p>엑셀을 선택하면 출금 거래만 표시됩니다.</p>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <label class="file-picker">
+            <span>엑셀 선택</span>
+            <input id="excelInput" type="file" accept=".xlsx,.xls">
+          </label>
+          <span class="file-name" id="selectedFileName">선택된 파일 없음</span>
+          <button id="uploadButton" class="solid-button" type="button" disabled>업로드</button>
+        </div>
+
+        <div class="summary" id="uploadSummary">아직 선택한 파일이 없습니다.</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>선택</th>
+                <th>상태</th>
+                <th>거래일시</th>
+                <th>금액</th>
+                <th>거래구분</th>
+                <th>내용</th>
+                <th>메모</th>
+                <th>유형</th>
+              </tr>
+            </thead>
+            <tbody id="transactionRows">
+              <tr>
+                <td colspan="8" class="empty">엑셀 파일을 선택해 주세요.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="typesView">
+        <div class="view-header">
+          <button class="text-button" type="button" data-view="homeView">← 처음으로</button>
+          <div>
+            <h2>유형 관리</h2>
+            <p>`gas 유형` 탭의 A열은 유형, C열 이후는 자동분류 규칙입니다.</p>
+          </div>
+        </div>
+
+        <div class="summary" id="typesSummary">유형과 자동분류 규칙을 편집할 수 있습니다.</div>
+
+        <div class="split-grid">
+          <section class="subpanel" aria-labelledby="typeTitle">
+            <div class="subpanel-header">
+              <div>
+                <h3 id="typeTitle">유형 목록</h3>
+                <p>A열 저장</p>
+              </div>
+              <div class="button-group">
+                <button id="sortTypeButton" class="ghost-button" type="button">정렬</button>
+                <button id="addTypeButton" class="small-button" type="button">추가</button>
+              </div>
+            </div>
+            <div id="typeList" class="stack-list"></div>
+          </section>
+
+          <section class="subpanel" aria-labelledby="ruleTitle">
+            <div class="subpanel-header">
+              <div>
+                <h3 id="ruleTitle">자동분류 규칙</h3>
+                <p>C:E열 저장</p>
+              </div>
+              <div class="button-group">
+                <button id="sortRuleButton" class="ghost-button" type="button">정렬</button>
+                <button id="addRuleButton" class="small-button" type="button">추가</button>
+              </div>
+            </div>
+            <div class="rule-head" aria-hidden="true">
+              <span>키워드</span>
+              <span>추천유형</span>
+              <span>설명</span>
+              <span></span>
+            </div>
+            <div id="ruleList" class="stack-list"></div>
+          </section>
+        </div>
+
+        <div class="toolbar end">
+          <button id="resetTypesButton" class="text-button" type="button">되돌리기</button>
+          <button id="saveTypesButton" class="solid-button" type="button">저장</button>
+        </div>
+      </section>
+
+      <section class="settings">
+        <label for="endpointInput">Apps Script Web App URL</label>
+        <div class="endpoint-row">
+          <input id="endpointInput" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+          <button id="loadEndpointButton" class="ghost-button" type="button">불러오기</button>
+          <button id="saveEndpointButton" class="small-button" type="button">저장</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

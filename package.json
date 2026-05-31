@@ -1,0 +1,17 @@
+{
+  "name": "scm",
+  "version": "1.0.0",
+  "description": "카카오뱅크 거래내역 엑셀을 브라우저에서 읽고, 출금 거래만 검수한 뒤 Google Sheet에 적재하는 개인용 정적 HTML 도구입니다.",
+  "main": "app.js",
+  "scripts": {
+    "check": "node --check app.js && node --check parser.js && node --check scripts/verify-excel.js",
+    "verify:excel": "node scripts/verify-excel.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "xlsx": "^0.18.5"
+  }
+}
