@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderRules();
   updateTypeSummary();
   refreshEndpointStatus();
+  if (getEndpoint()) loadRemoteState();
 });
 
 function bindNavigation() {
