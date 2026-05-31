@@ -131,7 +131,7 @@
   function guessType(row, types, rules) {
     const text = `${row.description} ${row.memo} ${row.method}`;
     const matched = rules.find((rule) => rule.keyword && text.includes(rule.keyword));
-    return matched?.type || types[0] || "";
+    return matched?.type || "";
   }
 
   function toUploadPayload(row, selectedType, uploadKey) {
