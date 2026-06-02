@@ -158,12 +158,12 @@ export default function ReportClient() {
             <h2>월별 수입·지출</h2>
             <ResponsiveContainer width="100%" height={280}>
               <ComposedChart data={barData} margin={{top:8,right:16,left:8,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5d9cc"/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5ea"/>
                 <XAxis dataKey="name" tick={{fontSize:12}}/>
                 <YAxis tickFormatter={fmt} tick={{fontSize:11}}/>
                 <Tooltip formatter={(v)=>fmtFull(Number(v))}/>
                 <Legend/>
-                <Bar dataKey="수입" fill="#3d7336" radius={[3,3,0,0]}/>
+                <Bar dataKey="수입" fill="#2e7d32" radius={[3,3,0,0]}/>
                 <Bar dataKey="지출" fill="#c4572a" radius={[3,3,0,0]}/>
               </ComposedChart>
             </ResponsiveContainer>
@@ -173,7 +173,7 @@ export default function ReportClient() {
             <h2>순수익 추이</h2>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={barData} margin={{top:8,right:16,left:8,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5d9cc"/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5ea"/>
                 <XAxis dataKey="name" tick={{fontSize:12}}/>
                 <YAxis tickFormatter={fmt} tick={{fontSize:11}}/>
                 <Tooltip formatter={(v)=>fmtFull(Number(v))}/>
@@ -227,7 +227,7 @@ export default function ReportClient() {
 
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart data={savingsData} margin={{top:4,right:16,left:0,bottom:0}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5d9cc"/>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5ea"/>
                   <XAxis dataKey="name" tick={{fontSize:12}}/>
                   <YAxis tickFormatter={v=>`${v}%`} tick={{fontSize:11}} domain={["auto","auto"]}/>
                   <Tooltip formatter={(v) => [`${v}%`, "저축률"]}/>
@@ -239,7 +239,7 @@ export default function ReportClient() {
                   />
                   <Bar dataKey="rate" radius={[3,3,0,0]} maxBarSize={44}>
                     {savingsData.map((d, i) => (
-                      <Cell key={i} fill={d.rate >= targetRate ? "#3d7336" : "#c4572a"} />
+                      <Cell key={i} fill={d.rate >= targetRate ? "#2e7d32" : "#c4572a"} />
                     ))}
                   </Bar>
                 </ComposedChart>
@@ -375,7 +375,7 @@ export default function ReportClient() {
                   <h2>월별 투자금액</h2>
                   <ResponsiveContainer width="100%" height={220}>
                     <ComposedChart data={invBarData} margin={{top:8,right:16,left:8,bottom:0}}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5d9cc"/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e5ea"/>
                       <XAxis dataKey="name" tick={{fontSize:12}}/>
                       <YAxis tickFormatter={fmt} tick={{fontSize:11}}/>
                       <Tooltip formatter={(v)=>fmtFull(Number(v))}/>
