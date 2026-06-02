@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
+async function pushToSheet(row: {
+  kind: string; month: string; traded_at: string; amount: number;
+  type_name: string; note: string; upload_key: string;
+}) {
+  const gasUrl = process.env.GAS_WEBHOOK_URL;
+  if (!gasUrl) return;
+  const params = new URLSearchParams({
+    action:     "appendTransaction",
+    kind:       row.kind,
+    month:      row.month,
+    traded_at:  row.traded_at,
+    amount:     String(row.amount),
+    type_name:  row.type_name,
+    note:       row.note || "",
+    upload_key: row.upload_key,
+  });
+  await fetch(`${gasUrl}?${params}`).catch(() => {});
+}
+
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -59,6 +78,8 @@ export async function POST(req: NextRequest) {
   }
 
   let inserted = 0;
+  const sheetPushes: Promise<void>[] = [];
+
   for (const r of rows) {
     const res = await sql`
       INSERT INTO transactions (kind, month, traded_at, amount, type_name, note, upload_key)
@@ -66,8 +87,16 @@ export async function POST(req: NextRequest) {
       ON CONFLICT (upload_key) DO NOTHING
       RETURNING id
     `;
-    if (res.length > 0) inserted++;
+    if (res.length > 0) {
+      inserted++;
+      // Only push income/expense to Google Sheets (skip investments)
+      if (r.kind === "income" || r.kind === "expense") {
+        sheetPushes.push(pushToSheet(r));
+      }
+    }
   }
+
+  await Promise.allSettled(sheetPushes);
 
   return NextResponse.json({ ok: true, inserted });
 }
