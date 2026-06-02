@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql, query } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
@@ -7,30 +7,30 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const p = req.nextUrl.searchParams;
-  const month     = p.get("month");
-  const kind      = p.get("kind");
-  const search    = p.get("search");
+  const month     = p.get("month");           // "2026-06" | null
+  const kind      = p.get("kind");            // "expense" | "income" | null
+  const search    = p.get("search");          // keyword | null
   const amountMin = p.get("amountMin");
   const amountMax = p.get("amountMax");
 
-  const conds: string[] = [];
-  const vals: unknown[] = [];
-  const add = (v: unknown) => { vals.push(v); return vals.length; };
+  // Normalise: pass null for "skip condition" values.
+  // The IS NULL short-circuit lets a single query handle all filter combinations.
+  const kindVal       = kind && kind !== "all" ? kind : null;
+  const searchPattern = search ? `%${search}%` : null;
+  const minVal        = amountMin ? Number(amountMin) : null;
+  const maxVal        = amountMax ? Number(amountMax) : null;
 
-  if (month)                  conds.push(`month = $${add(month)}`);
-  if (kind && kind !== "all") conds.push(`kind = $${add(kind)}`);
-  if (amountMin)              conds.push(`amount >= $${add(Number(amountMin))}`);
-  if (amountMax)              conds.push(`amount <= $${add(Number(amountMax))}`);
-  if (search) {
-    const n = add(`%${search}%`);
-    conds.push(`(note ILIKE $${n} OR type_name ILIKE $${n})`);
-  }
-
-  const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
-  const rows = await query(
-    `SELECT * FROM transactions ${where} ORDER BY traded_at DESC LIMIT 500`,
-    vals,
-  );
+  const rows = await sql`
+    SELECT * FROM transactions
+    WHERE (${month}         IS NULL OR month      = ${month})
+      AND (${kindVal}       IS NULL OR kind       = ${kindVal})
+      AND (${searchPattern} IS NULL OR note       ILIKE ${searchPattern}
+                                    OR type_name  ILIKE ${searchPattern})
+      AND (${minVal}        IS NULL OR amount >= ${minVal})
+      AND (${maxVal}        IS NULL OR amount <= ${maxVal})
+    ORDER BY traded_at DESC
+    LIMIT 500
+  `;
 
   return NextResponse.json(rows);
 }

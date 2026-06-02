@@ -38,6 +38,7 @@ export default function TransactionsClient() {
   const [editId,      setEditId]      = useState<number|null>(null);
   const [editForm,    setEditForm]    = useState<EditState|null>(null);
   const [saving,      setSaving]      = useState(false);
+  const [error,       setError]       = useState("");
 
   useEffect(() => {
     fetch("/api/types").then(r=>r.json()).then(setTypes);
@@ -45,16 +46,24 @@ export default function TransactionsClient() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (monthFilter)            params.set("month",     monthFilter);
-    if (kindFilter !== "all")   params.set("kind",      kindFilter);
-    if (search.trim())          params.set("search",    search.trim());
-    if (amountMin)              params.set("amountMin", amountMin);
-    if (amountMax)              params.set("amountMax", amountMax);
-    const data = await fetch(`/api/transactions?${params}`).then(r=>r.json());
-    setRows(Array.isArray(data) ? data : []);
-    setLoading(false);
-    setEditId(null); setEditForm(null);
+    setError("");
+    try {
+      const params = new URLSearchParams();
+      if (monthFilter)            params.set("month",     monthFilter);
+      if (kindFilter !== "all")   params.set("kind",      kindFilter);
+      if (search.trim())          params.set("search",    search.trim());
+      if (amountMin)              params.set("amountMin", amountMin);
+      if (amountMax)              params.set("amountMax", amountMax);
+      const res  = await fetch(`/api/transactions?${params}`);
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "서버 오류"); return; }
+      setRows(Array.isArray(data) ? data : []);
+      setEditId(null); setEditForm(null);
+    } catch {
+      setError("네트워크 오류 — 잠시 후 다시 시도하세요.");
+    } finally {
+      setLoading(false);
+    }
   }, [monthFilter, kindFilter, search, amountMin, amountMax]);
 
   useEffect(() => { load(); }, [load]);
@@ -149,7 +158,8 @@ export default function TransactionsClient() {
       )}
 
       {loading && <p className="loading-hint">불러오는 중…</p>}
-      {!loading && rows.length===0 && <p className="empty-hint">해당 조건에 데이터가 없습니다.</p>}
+      {!loading && error && <p className="empty-hint" style={{color:"var(--red)"}}>{error}</p>}
+      {!loading && !error && rows.length===0 && <p className="empty-hint">해당 조건에 데이터가 없습니다.</p>}
 
       {!loading && rows.length>0 && (
         <div className="panel" style={{padding:0}}>
