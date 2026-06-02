@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "scm-dev-secret-change-in-production"
-);
+const DEV_SECRET = "scm-dev-secret-change-in-production";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+
+function getSecret() {
+  const secret = process.env.JWT_SECRET || "";
+  if (!secret || (process.env.NODE_ENV === "production" && secret === DEV_SECRET)) {
+    throw new Error("JWT_SECRET environment variable must be set to a strong production value");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -20,7 +26,7 @@ export async function proxy(req: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, SECRET);
+    await jwtVerify(token, getSecret());
     return NextResponse.next();
   } catch {
     const res = NextResponse.redirect(new URL("/login", req.url));

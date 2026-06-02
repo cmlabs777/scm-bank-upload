@@ -13,21 +13,22 @@ export async function GET(req: NextRequest) {
   const amountMin = p.get("amountMin");
   const amountMax = p.get("amountMax");
 
-  // Normalise: pass null for "skip condition" values.
-  // The IS NULL short-circuit lets a single query handle all filter combinations.
-  const kindVal       = kind && kind !== "all" ? kind : null;
-  const searchPattern = search ? `%${search}%` : null;
-  const minVal        = amountMin ? Number(amountMin) : null;
-  const maxVal        = amountMax ? Number(amountMax) : null;
+  // Keep parameter types concrete for Neon/Postgres. Untyped NULL checks can
+  // fail with "could not determine data type of parameter".
+  const monthVal      = month || "";
+  const kindVal       = kind && kind !== "all" ? kind : "";
+  const searchPattern = search ? `%${search}%` : "";
+  const minVal        = amountMin ? Number(amountMin) : 0;
+  const maxVal        = amountMax ? Number(amountMax) : 0;
 
   const rows = await sql`
     SELECT * FROM transactions
-    WHERE (${month}         IS NULL OR month      = ${month})
-      AND (${kindVal}       IS NULL OR kind       = ${kindVal})
-      AND (${searchPattern} IS NULL OR note       ILIKE ${searchPattern}
+    WHERE (${monthVal}      = '' OR month      = ${monthVal})
+      AND (${kindVal}       = '' OR kind       = ${kindVal})
+      AND (${searchPattern} = '' OR note       ILIKE ${searchPattern}
                                     OR type_name  ILIKE ${searchPattern})
-      AND (${minVal}        IS NULL OR amount >= ${minVal})
-      AND (${maxVal}        IS NULL OR amount <= ${maxVal})
+      AND (${minVal}        = 0  OR amount >= ${minVal})
+      AND (${maxVal}        = 0  OR amount <= ${maxVal})
     ORDER BY traded_at DESC
     LIMIT 500
   `;
@@ -44,6 +45,18 @@ export async function POST(req: NextRequest) {
     kind: string; month: string; traded_at: string; amount: number;
     type_name: string; note: string; upload_key: string;
   }> = Array.isArray(body) ? body : [body];
+
+  const invalid = rows.find((r) =>
+    !["income", "expense"].includes(r.kind) ||
+    !r.month ||
+    !r.traded_at ||
+    !Number(r.amount) ||
+    !String(r.type_name || "").trim() ||
+    !r.upload_key
+  );
+  if (invalid) {
+    return NextResponse.json({ error: "kind, month, traded_at, amount, type_name, upload_key required" }, { status: 400 });
+  }
 
   let inserted = 0;
   for (const r of rows) {

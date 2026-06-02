@@ -11,6 +11,9 @@ export async function PATCH(
 
   const { id } = await params;
   const { kind, date, amount, type_name, note } = await req.json();
+  if (!["income", "expense"].includes(kind) || !date || !Number(amount) || !String(type_name || "").trim()) {
+    return NextResponse.json({ error: "kind, date, amount, type_name required" }, { status: 400 });
+  }
 
   // date input gives "YYYY-MM-DD" → store as "YYYY.MM.DD 00:00:00"
   const [y, mo, d] = String(date).split("-");

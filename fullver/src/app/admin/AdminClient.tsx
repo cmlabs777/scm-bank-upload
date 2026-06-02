@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 interface User   { id: number; email: string; role: string; created_at: string; }
-interface Rule   { id: number; keyword: string; type_name: string; description: string; }
+interface Rule   { id: number; keyword: string; kind: string; type_name: string; description: string; }
 interface Budget { id: number; type_name: string; kind: string; monthly_amount: number; }
 interface TxType { id: number; name: string; kind: string; }
 
@@ -23,6 +23,7 @@ export default function AdminClient() {
   // ── rules ──
   const [rules,    setRules]    = useState<Rule[]>([]);
   const [rkeyword, setRkeyword] = useState("");
+  const [rkind,    setRkind]    = useState("expense");
   const [rtype,    setRtype]    = useState("");
   const [rdesc,    setRdesc]    = useState("");
 
@@ -42,7 +43,10 @@ export default function AdminClient() {
   async function loadTypes()   { setTypes(await fetch("/api/types").then(r=>r.json())); }
 
   useEffect(() => {
-    loadUsers(); loadRules(); loadBudgets(); loadTypes();
+    const timer = window.setTimeout(() => {
+      loadUsers(); loadRules(); loadBudgets(); loadTypes();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // ── account actions ──
@@ -72,7 +76,7 @@ export default function AdminClient() {
   async function handleAddRule(e: React.FormEvent) {
     e.preventDefault(); setStatus("");
     if (!rkeyword.trim() || !rtype.trim()) { setStatus("키워드와 유형은 필수입니다."); return; }
-    const data = await fetch("/api/rules", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ keyword:rkeyword.trim(), type_name:rtype.trim(), description:rdesc }) }).then(r=>r.json());
+    const data = await fetch("/api/rules", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ keyword:rkeyword.trim(), kind:rkind, type_name:rtype.trim(), description:rdesc }) }).then(r=>r.json());
     if (data.ok) { setStatus("✓ 저장"); setRkeyword(""); setRtype(""); setRdesc(""); loadRules(); }
     else setStatus(data.error || "오류");
   }
@@ -170,10 +174,11 @@ export default function AdminClient() {
               ? <p className="empty-hint">등록된 규칙이 없습니다.</p>
               : (
                 <table>
-                  <thead><tr><th>키워드</th><th>유형</th><th>설명</th><th></th></tr></thead>
+                  <thead><tr><th>구분</th><th>키워드</th><th>유형</th><th>설명</th><th></th></tr></thead>
                   <tbody>
                     {rules.map(r=>(
                       <tr key={r.id}>
+                        <td><span className={`badge ${r.kind==="income"?"badge-income":"badge-expense"}`}>{r.kind==="income"?"입금":"출금"}</span></td>
                         <td><code className="keyword-chip">{r.keyword}</code></td>
                         <td>{r.type_name}</td>
                         <td className="note-cell">{r.description}</td>
@@ -189,9 +194,15 @@ export default function AdminClient() {
           <div className="panel">
             <h2>규칙 추가</h2>
             <form className="create-form" onSubmit={handleAddRule}>
+              <div className="field"><label>구분</label>
+                <select value={rkind} onChange={e=>{ setRkind(e.target.value); setRtype(""); }}>
+                  <option value="expense">출금</option>
+                  <option value="income">입금</option>
+                </select>
+              </div>
               <div className="field"><label>키워드</label><input value={rkeyword} onChange={e=>setRkeyword(e.target.value)} placeholder="예: 스타벅스" required /></div>
               <div className="field"><label>유형 (type_name)</label><input value={rtype} onChange={e=>setRtype(e.target.value)} placeholder="예: 카페" list="type-list-dl" required />
-                <datalist id="type-list-dl">{types.map(t=><option key={t.id} value={t.name}/>)}</datalist>
+                <datalist id="type-list-dl">{types.filter(t=>t.kind===rkind).map(t=><option key={t.id} value={t.name}/>)}</datalist>
               </div>
               <div className="field"><label>설명 (선택)</label><input value={rdesc} onChange={e=>setRdesc(e.target.value)} placeholder="간단 설명" /></div>
               <button type="submit" className="solid-button">규칙 추가</button>

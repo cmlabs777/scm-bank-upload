@@ -66,7 +66,12 @@ export default function TransactionsClient() {
     }
   }, [monthFilter, kindFilter, search, amountMin, amountMax]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   function applySearch(e: React.FormEvent) {
     e.preventDefault();
@@ -87,13 +92,22 @@ export default function TransactionsClient() {
 
   async function saveEdit(id: number) {
     if (!editForm) return;
+    if (!editForm.type_name) {
+      setError("유형을 선택하세요.");
+      return;
+    }
     setSaving(true);
-    await fetch(`/api/transactions/${id}`, {
+    const res = await fetch(`/api/transactions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(editForm),
     });
     setSaving(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "저장 오류");
+      return;
+    }
     await load();
   }
 

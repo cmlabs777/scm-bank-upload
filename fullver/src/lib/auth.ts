@@ -2,11 +2,17 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { JwtPayload, Role } from "@/types";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "scm-dev-secret-change-in-production"
-);
+const DEV_SECRET = "scm-dev-secret-change-in-production";
 const COOKIE = "scm_token";
 const EXPIRES = "7d";
+
+function getSecret() {
+  const secret = process.env.JWT_SECRET || "";
+  if (!secret || (process.env.NODE_ENV === "production" && secret === DEV_SECRET)) {
+    throw new Error("JWT_SECRET environment variable must be set to a strong production value");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export async function signToken(payload: JwtPayload): Promise<string> {
   return new SignJWT({ email: payload.email, role: payload.role })
@@ -14,12 +20,12 @@ export async function signToken(payload: JwtPayload): Promise<string> {
     .setSubject(String(payload.sub))
     .setIssuedAt()
     .setExpirationTime(EXPIRES)
-    .sign(SECRET);
+    .sign(getSecret());
 }
 
 export async function verifyToken(token: string): Promise<JwtPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     return {
       sub: Number(payload.sub),
       email: payload.email as string,

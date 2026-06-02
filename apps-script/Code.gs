@@ -43,6 +43,10 @@ function routeAction_(action, payload) {
     if (action === "repairWithdrawalDates") return { ok: true, data: repairWithdrawalDates_() };
     if (action === "inspectMonth") return { ok: true, data: inspectMonth_() };
     if (action === "getAllWithdrawals") return { ok: true, data: getAllWithdrawals_() };
+    if (action === "getAllHistory")     return { ok: true, data: getAllHistory_() };
+    if (action === "listSheets")       return { ok: true, data: listSheets_() };
+    if (action === "inspectSheet")     return { ok: true, data: inspectSheet_(payload.sheetName || "") };
+    if (action === "getIncomeHistory") return { ok: true, data: getIncomeHistory_() };
     return { ok: false, error: "Unknown action: " + action };
   } catch (error) {
     return { ok: false, error: String(error && error.message ? error.message : error) };
@@ -403,6 +407,138 @@ function getAllWithdrawals_() {
       upload_key: String(row[keyColumn - 1] || "").trim(),
     };
   }).filter(function(r) { return r.upload_key && r.upload_key.indexOf("|") !== -1 && r.amount > 0 && r.traded_at; });
+}
+
+// 시트 이름 목록 반환 — 어떤 탭이 있는지 확인용
+function listSheets_() {
+  return getSpreadsheet_().getSheets().map(function(s) { return s.getName(); });
+}
+
+// 출금내역 탭의 ALL 행 반환 (upload_key 없는 구 데이터 포함)
+// upload_key 없는 행은 "traded_at|amount|type_name|note" 로 자동 생성
+function getAllHistory_() {
+  var sheet = getSpreadsheet_().getSheetByName(WITHDRAWAL_SHEET_NAME);
+  if (!sheet) throw new Error("출금내역 탭을 찾을 수 없습니다.");
+
+  var table = findWithdrawalTable_(sheet);
+  var keyColumn = ensureUploadKeyColumn_(sheet, table);
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= table.headerRow) return [];
+
+  var rowCount = lastRow - table.headerRow;
+  var colCount = Math.max(keyColumn, table.maxColumn);
+  var data = sheet.getRange(table.headerRow + 1, 1, rowCount, colCount).getValues();
+
+  var rows = [];
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    var rawDate = row[table.columns.date - 1];
+    var dateObj = rawDate instanceof Date ? rawDate : parseSheetDate_(rawDate);
+    if (!dateObj) continue;
+
+    var y  = dateObj.getFullYear();
+    var mo = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+    var d  = ("0" + dateObj.getDate()).slice(-2);
+    var tradedAt = y + "." + mo + "." + d + " 00:00:00";
+    var month    = y + "-" + mo;
+
+    var amount    = Math.abs(Number(row[table.columns.amount  - 1]) || 0);
+    var typeName  = String(row[table.columns.content - 1] || "").trim();
+    var note      = String(row[table.columns.note    - 1] || "").trim();
+    var kindCell  = String(row[table.columns.kind    - 1] || "출금").trim();
+    var kind      = kindCell === "입금" ? "income" : "expense";
+
+    if (!amount || !tradedAt) continue;
+
+    var existingKey = String(row[keyColumn - 1] || "").trim();
+    var uploadKey = (existingKey && existingKey.indexOf("|") !== -1)
+      ? existingKey
+      : [tradedAt, amount, typeName, note].join("|");
+
+    rows.push({
+      kind: kind,
+      month: month,
+      traded_at: tradedAt,
+      amount: amount,
+      type_name: typeName,
+      note: note,
+      upload_key: uploadKey,
+    });
+  }
+  return rows;
+}
+
+// 시트 헤더 구조 확인 (어느 탭이든 첫 5행 반환)
+function inspectSheet_(sheetName) {
+  var ss = getSpreadsheet_();
+  var sheet = sheetName ? ss.getSheetByName(sheetName) : null;
+  if (!sheet) return { error: "탭을 찾을 수 없습니다: " + sheetName, sheets: listSheets_() };
+  var lastRow = Math.min(sheet.getLastRow(), 5);
+  var lastCol = Math.min(sheet.getLastColumn(), 20);
+  if (lastRow < 1 || lastCol < 1) return { headers: [], sample: [] };
+  var data = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  return { headers: data[0], sample: data.slice(1) };
+}
+
+// 입금내역 탭 전체 임포트
+// 헤더 기대: 입출금구분, 월구분, 일자, 금액, 내용, 비고 (출금내역과 동일 구조)
+function getIncomeHistory_() {
+  var INCOME_SHEET = "입금내역";
+  var sheet = getSpreadsheet_().getSheetByName(INCOME_SHEET);
+  if (!sheet) throw new Error(INCOME_SHEET + " 탭을 찾을 수 없습니다.");
+
+  // 출금내역과 동일한 테이블 구조를 시도
+  var table;
+  try {
+    table = findWithdrawalTable_(sheet);
+  } catch(e) {
+    // 헤더 구조가 다를 경우 원시 데이터로 반환
+    return { error: "헤더 구조 불일치 — inspectSheet 로 확인 필요: " + String(e) };
+  }
+
+  var keyColumn = ensureUploadKeyColumn_(sheet, table);
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= table.headerRow) return [];
+
+  var rowCount = lastRow - table.headerRow;
+  var colCount = Math.max(keyColumn, table.maxColumn);
+  var data = sheet.getRange(table.headerRow + 1, 1, rowCount, colCount).getValues();
+
+  var rows = [];
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    var rawDate = row[table.columns.date - 1];
+    var dateObj = rawDate instanceof Date ? rawDate : parseSheetDate_(rawDate);
+    if (!dateObj) continue;
+
+    var y  = dateObj.getFullYear();
+    var mo = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+    var d  = ("0" + dateObj.getDate()).slice(-2);
+    var tradedAt = y + "." + mo + "." + d + " 00:00:00";
+    var month    = y + "-" + mo;
+
+    var amount   = Math.abs(Number(row[table.columns.amount  - 1]) || 0);
+    var typeName = String(row[table.columns.content - 1] || "").trim();
+    var note     = String(row[table.columns.note    - 1] || "").trim();
+
+    if (!amount || !tradedAt) continue;
+
+    var existingKey = String(row[keyColumn - 1] || "").trim();
+    var uploadKey = (existingKey && existingKey.indexOf("|") !== -1)
+      ? existingKey
+      : ["INC", tradedAt, amount, typeName, note].join("|");  // INC prefix for income dedup
+
+    rows.push({
+      kind: "income",
+      month: month,
+      traded_at: tradedAt,
+      amount: amount,
+      type_name: typeName,
+      note: note,
+      upload_key: uploadKey,
+    });
+  }
+  return rows;
 }
 
 function normalizeArray_(values) {

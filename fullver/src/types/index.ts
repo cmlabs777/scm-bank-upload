@@ -16,6 +16,7 @@ export interface TransactionType {
 export interface ClassificationRule {
   id: number;
   keyword: string;
+  kind: "income" | "expense";
   type_name: string;
   description: string;
 }

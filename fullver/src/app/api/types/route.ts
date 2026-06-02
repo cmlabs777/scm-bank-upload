@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const result = await sql`
     INSERT INTO transaction_types (name, kind) VALUES (${name}, ${kind})
-    ON CONFLICT (name) DO NOTHING
+    ON CONFLICT (name, kind) DO NOTHING
     RETURNING id
   `;
   return NextResponse.json({ ok: true, id: result[0]?.id ?? null });

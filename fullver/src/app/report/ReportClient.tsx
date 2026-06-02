@@ -61,17 +61,20 @@ export default function ReportClient() {
   const [selectedMonth, setSelectedMonth] = useState<MonthData|null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/report?startMonth=${startMonth}&endMonth=${endMonth}`)
-      .then(r=>r.json())
-      .then(d => {
-        setReport(d.report || []);
-        setInvCat(d.investByCategory || []);
-        setInvKind(d.investByKind || []);
-        setBudgets(d.budgets || []);
-        setSelectedMonth(null);
-      })
-      .finally(()=>setLoading(false));
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      fetch(`/api/report?startMonth=${startMonth}&endMonth=${endMonth}`)
+        .then(r=>r.json())
+        .then(d => {
+          setReport(d.report || []);
+          setInvCat(d.investByCategory || []);
+          setInvKind(d.investByKind || []);
+          setBudgets(d.budgets || []);
+          setSelectedMonth(null);
+        })
+        .finally(()=>setLoading(false));
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [startMonth, endMonth]);
 
   const totalIncome  = report.reduce((s,d)=>s+d.income,0);

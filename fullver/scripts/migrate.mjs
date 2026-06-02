@@ -32,13 +32,14 @@ await client.query(`
 
   CREATE TABLE IF NOT EXISTS transaction_types (
     id   SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     kind TEXT NOT NULL DEFAULT 'expense'
   );
 
   CREATE TABLE IF NOT EXISTS classification_rules (
     id          SERIAL PRIMARY KEY,
-    keyword     TEXT NOT NULL UNIQUE,
+    keyword     TEXT NOT NULL,
+    kind        TEXT NOT NULL DEFAULT 'expense',
     type_name   TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT ''
   );
@@ -74,6 +75,23 @@ await client.query(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_investments_traded ON investments(traded_at);
+`);
+
+await client.query(`
+  ALTER TABLE transaction_types
+    DROP CONSTRAINT IF EXISTS transaction_types_name_key;
+
+  CREATE UNIQUE INDEX IF NOT EXISTS transaction_types_name_kind_key
+    ON transaction_types(name, kind);
+
+  ALTER TABLE classification_rules
+    ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'expense';
+
+  ALTER TABLE classification_rules
+    DROP CONSTRAINT IF EXISTS classification_rules_keyword_key;
+
+  CREATE UNIQUE INDEX IF NOT EXISTS classification_rules_keyword_kind_key
+    ON classification_rules(keyword, kind);
 `);
 
 console.log("✓ Tables created (or already exist)");

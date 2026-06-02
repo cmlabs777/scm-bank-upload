@@ -3,7 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 
-declare const XLSX: any;
+interface SheetJsWorkbook {
+  SheetNames: string[];
+  Sheets: Record<string, unknown>;
+}
+
+interface SheetJsApi {
+  read(data: string | ArrayBuffer | null, options: { type: string; cellDates: boolean }): SheetJsWorkbook;
+  utils: {
+    sheet_to_json(sheet: unknown, options: { header: 1; defval: string }): unknown[][];
+  };
+}
+
+declare const XLSX: SheetJsApi;
 
 interface ParsedRow {
   kind: "expense" | "income";
@@ -21,6 +33,7 @@ interface ParsedRow {
 }
 
 interface TxType { id: number; name: string; kind: string; }
+interface Rule { id?: number; keyword: string; kind: "expense" | "income"; type_name: string; description?: string; }
 
 interface ManualTxForm {
   kind: "expense" | "income";
@@ -66,7 +79,7 @@ function makeUploadKey(traded_at:string, amount:number, desc:string, memo:string
   return [traded_at,amount,desc,memo].map(normalizeText).join("|");
 }
 
-function parseExcelRows(wb: any, existingKeys: Set<string>, types: TxType[], rules: Array<{keyword:string;type_name:string}>): ParsedRow[] {
+function parseExcelRows(wb: SheetJsWorkbook, existingKeys: Set<string>, types: TxType[], rules: Rule[]): ParsedRow[] {
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const raw: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header:1, defval:"" });
   const headers = (raw[HEADER_ROW_INDEX] as string[]) || [];
@@ -94,7 +107,7 @@ function parseExcelRows(wb: any, existingKeys: Set<string>, types: TxType[], rul
     const upload_key = makeUploadKey(dateParsed.traded_at, absAmount, description, memo);
     const duplicated = existingKeys.has(upload_key);
     const searchText = `${description} ${memo} ${normalizeText(row[idx.method])}`;
-    const matched = rules.find(r => r.keyword && searchText.includes(r.keyword));
+    const matched = rules.find(r => r.kind === kind && r.keyword && searchText.includes(r.keyword));
     return [{
       kind, month: dateParsed.month, traded_at: dateParsed.traded_at,
       amount: absAmount, type_name: matched?.type_name || "",
@@ -109,7 +122,7 @@ export default function DashboardClient() {
   const [tab, setTab] = useState<"upload"|"manual"|"invest">("upload");
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [types, setTypes] = useState<TxType[]>([]);
-  const [rules, setRules] = useState<Array<{keyword:string;type_name:string}>>([]);
+  const [rules, setRules] = useState<Rule[]>([]);
   const [existingKeys, setExistingKeys] = useState<Set<string>>(new Set());
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState("");
@@ -150,7 +163,10 @@ export default function DashboardClient() {
         const income = parsed.filter(r=>r.kind==="income"), expense = parsed.filter(r=>r.kind==="expense");
         const newCnt = parsed.filter(r=>!r.duplicated).length, dupCnt = parsed.filter(r=>r.duplicated).length;
         setStatus(`총 ${parsed.length}건 (입금 ${income.length} / 출금 ${expense.length}) — 신규 ${newCnt}건, 중복 ${dupCnt}건`);
-      } catch(err:any) { setStatus("파싱 오류: "+err.message); }
+      } catch(err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setStatus("파싱 오류: " + message);
+      }
     };
     reader.readAsArrayBuffer(file);
   }
@@ -163,6 +179,11 @@ export default function DashboardClient() {
   async function handleUpload() {
     const toUpload = rows.filter(r=>r.include);
     if (!toUpload.length) { setStatus("업로드할 항목이 없습니다."); return; }
+    const missingTypeCount = toUpload.filter(r=>!r.type_name).length;
+    if (missingTypeCount > 0) {
+      setStatus(`유형이 선택되지 않은 항목이 ${missingTypeCount}건 있습니다.`);
+      return;
+    }
     setUploading(true);
     try {
       const res = await fetch("/api/transactions", {
@@ -184,6 +205,7 @@ export default function DashboardClient() {
     const traded_at = `${y}.${mo}.${d} 00:00:00`;
     const amount = Number(manualForm.amount);
     if (!amount) { setManualStatus("금액을 입력하세요."); return; }
+    if (!manualForm.type_name) { setManualStatus("유형을 선택하세요."); return; }
     const upload_key = makeUploadKey(traded_at, amount, manualForm.type_name, manualForm.note);
     try {
       const res = await fetch("/api/transactions", {
@@ -243,7 +265,7 @@ export default function DashboardClient() {
                 </button>
               ))}
             </div>
-            <button className="solid-button" disabled={rows.filter(r=>r.include).length===0||uploading} onClick={handleUpload}>
+            <button className="solid-button" disabled={rows.filter(r=>r.include).length===0||rows.some(r=>r.include&&!r.type_name)||uploading} onClick={handleUpload}>
               {uploading?"업로드 중…":"업로드"}
             </button>
           </div>
@@ -255,7 +277,7 @@ export default function DashboardClient() {
               <table>
                 <thead><tr><th>선택</th><th>구분</th><th>상태</th><th>날짜</th><th>금액</th><th>내용</th><th>유형</th></tr></thead>
                 <tbody>
-                  {filteredRows.map((row,i)=>{
+                  {filteredRows.map((row)=>{
                     const realIdx = rows.indexOf(row);
                     const typeList = row.kind==="expense" ? expTypes : incTypes;
                     return (
