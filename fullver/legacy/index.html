@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SCM 가계부 풀버전</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <script src="./parser.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar" aria-label="앱 상단">
+        <div class="topbar-left">
+          <div class="topbar-icon">SCM</div>
+          <div>
+            <p class="eyebrow">SCM · 가계부 fullver</p>
+            <h1>입출금 · 투자내역 정리</h1>
+          </div>
+        </div>
+        <div class="status" id="connectionStatus">Apps Script URL 미설정</div>
+      </section>
+
+      <section class="panel" id="homeView">
+        <div class="home-actions full-actions" aria-label="첫 화면 메뉴">
+          <button class="primary-action" type="button" data-upload-mode="withdrawal">
+            <span class="action-icon">출금</span>
+            <span>출금 업로드</span>
+            <small>카카오뱅크 엑셀의 마이너스 금액 검수</small>
+          </button>
+          <button class="primary-action income-action" type="button" data-upload-mode="income">
+            <span class="action-icon">입금</span>
+            <span>입금 업로드</span>
+            <small>카카오뱅크 엑셀의 플러스 금액 검수</small>
+          </button>
+          <button class="secondary-action" type="button" data-view="typesView">
+            <span class="action-icon">유형</span>
+            <span>유형 관리</span>
+            <small>출금/입금 유형과 자동분류 규칙 관리</small>
+          </button>
+          <button class="secondary-action invest-action" type="button" data-view="investmentView">
+            <span class="action-icon">투자</span>
+            <span>투자 입력</span>
+            <small>투자raw 탭에 매수·매도·적금·배당 입력</small>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="uploadView">
+        <div class="view-header">
+          <button class="text-button" type="button" data-view="homeView">처음으로</button>
+          <div>
+            <h2 id="uploadTitle">거래내역 업로드</h2>
+            <p id="uploadHelp">엑셀을 선택하면 거래가 표시됩니다.</p>
+          </div>
+        </div>
+
+        <div class="mode-tabs" aria-label="업로드 모드">
+          <button class="mode-tab active" type="button" data-upload-mode="withdrawal">출금</button>
+          <button class="mode-tab" type="button" data-upload-mode="income">입금</button>
+        </div>
+
+        <div class="toolbar">
+          <label class="file-picker">
+            <span>엑셀 선택</span>
+            <input id="excelInput" type="file" accept=".xlsx,.xls">
+          </label>
+          <span class="file-name" id="selectedFileName">선택된 파일 없음</span>
+          <button id="uploadButton" class="solid-button" type="button" disabled>업로드</button>
+        </div>
+
+        <div class="summary" id="uploadSummary">아직 선택한 파일이 없습니다.</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>선택</th>
+                <th>상태</th>
+                <th>거래일시</th>
+                <th>금액</th>
+                <th>거래구분</th>
+                <th>내용</th>
+                <th>메모</th>
+                <th>유형</th>
+              </tr>
+            </thead>
+            <tbody id="transactionRows">
+              <tr>
+                <td colspan="8" class="empty">엑셀 파일을 선택해 주세요.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="typesView">
+        <div class="view-header">
+          <button class="text-button" type="button" data-view="homeView">처음으로</button>
+          <div>
+            <h2>유형 관리</h2>
+            <p id="typesHelp">출금은 `gas 유형`, 입금은 `gas 입금유형` 탭에 저장됩니다.</p>
+          </div>
+        </div>
+
+        <div class="mode-tabs" aria-label="유형 모드">
+          <button class="mode-tab active" type="button" data-type-mode="withdrawal">출금 유형</button>
+          <button class="mode-tab" type="button" data-type-mode="income">입금 유형</button>
+        </div>
+
+        <div class="summary" id="typesSummary">유형과 자동분류 규칙을 편집할 수 있습니다.</div>
+
+        <div class="split-grid">
+          <section class="subpanel" aria-labelledby="typeTitle">
+            <div class="subpanel-header">
+              <div>
+                <h3 id="typeTitle">유형 목록</h3>
+                <p id="typeColumnHelp">A열 저장</p>
+              </div>
+              <div class="button-group">
+                <button id="sortTypeButton" class="ghost-button" type="button">정렬</button>
+                <button id="addTypeButton" class="small-button" type="button">추가</button>
+              </div>
+            </div>
+            <div id="typeList" class="stack-list"></div>
+          </section>
+
+          <section class="subpanel" aria-labelledby="ruleTitle">
+            <div class="subpanel-header">
+              <div>
+                <h3 id="ruleTitle">자동분류 규칙</h3>
+                <p>C:E열 저장</p>
+              </div>
+              <div class="button-group">
+                <button id="sortRuleButton" class="ghost-button" type="button">정렬</button>
+                <button id="addRuleButton" class="small-button" type="button">추가</button>
+              </div>
+            </div>
+            <div class="rule-head" aria-hidden="true">
+              <span>키워드</span>
+              <span>추천유형</span>
+              <span>설명</span>
+              <span></span>
+            </div>
+            <div id="ruleList" class="stack-list"></div>
+          </section>
+        </div>
+
+        <div class="toolbar end">
+          <button id="resetTypesButton" class="text-button" type="button">되돌리기</button>
+          <button id="saveTypesButton" class="solid-button" type="button">저장</button>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="investmentView">
+        <div class="view-header">
+          <button class="text-button" type="button" data-view="homeView">처음으로</button>
+          <div>
+            <h2>투자 입력</h2>
+            <p>은행 엑셀로 알 수 없는 종목·수량·단가 정보는 `투자raw` 탭에 별도 저장합니다.</p>
+          </div>
+        </div>
+
+        <div class="summary" id="investmentSummary">투자 거래를 입력한 뒤 추가하고 저장해 주세요.</div>
+
+        <section class="subpanel investment-form" aria-label="투자 거래 입력">
+          <label>거래구분
+            <select id="investmentKind">
+              <option>매수</option>
+              <option>매도</option>
+              <option>적금납입</option>
+              <option>적금만기</option>
+              <option>배당</option>
+              <option>이자</option>
+              <option>입출금</option>
+            </select>
+          </label>
+          <label>종류
+            <input id="investmentCategory" placeholder="예: 국내주식, 적금, ETF">
+          </label>
+          <label>상품
+            <input id="investmentProduct" placeholder="예: 삼성전자, 카카오뱅크 26주">
+          </label>
+          <label>거래일
+            <input id="investmentDate" type="date">
+          </label>
+          <label>단가
+            <input id="investmentPrice" type="number" min="0" step="0.01">
+          </label>
+          <label>수량
+            <input id="investmentQuantity" type="number" min="0" step="0.000001">
+          </label>
+          <label>금액
+            <input id="investmentAmount" type="number" min="0" step="1">
+          </label>
+          <label>수수료/세금
+            <input id="investmentFee" type="number" min="0" step="1">
+          </label>
+          <label>실현손익
+            <input id="investmentProfit" type="number" step="1">
+          </label>
+          <label class="wide-field">비고
+            <input id="investmentNote" placeholder="필요한 메모">
+          </label>
+          <div class="investment-actions">
+            <button id="addInvestmentButton" class="small-button" type="button">목록 추가</button>
+            <button id="saveInvestmentButton" class="solid-button" type="button" disabled>투자raw 저장</button>
+          </div>
+        </section>
+
+        <div class="table-wrap investment-table">
+          <table>
+            <thead>
+              <tr>
+                <th>거래구분</th>
+                <th>종류</th>
+                <th>상품</th>
+                <th>거래일</th>
+                <th>단가</th>
+                <th>수량</th>
+                <th>금액</th>
+                <th>수수료/세금</th>
+                <th>실현손익</th>
+                <th>비고</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="investmentRows">
+              <tr>
+                <td colspan="11" class="empty">아직 추가한 투자 거래가 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="settings">
+        <label for="endpointInput">Apps Script Web App URL</label>
+        <div class="endpoint-row">
+          <input id="endpointInput" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+          <button id="loadEndpointButton" class="ghost-button" type="button">불러오기</button>
+          <button id="saveEndpointButton" class="small-button" type="button">저장</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
