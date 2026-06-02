@@ -18,15 +18,21 @@ export default function AppShell({ children, isAdmin }: { children: React.ReactN
     router.push("/login");
   }
 
+  const navItems = [
+    ...NAV,
+    ...(isAdmin ? [{ href: "/admin", label: "관리자", icon: "⚙️" }] : []),
+  ];
+
   return (
     <div className="app-shell">
+      {/* Desktop sidebar */}
       <nav className="sidebar">
         <div className="sidebar-brand">
           <span className="brand-coin">🪙</span>
           <span className="brand-name">SCM</span>
         </div>
         <ul className="nav-list">
-          {NAV.map(({ href, label, icon }) => (
+          {navItems.map(({ href, label, icon }) => (
             <li key={href}>
               <Link href={href} className={`nav-item${pathname.startsWith(href) ? " active" : ""}`}>
                 <span>{icon}</span>
@@ -34,18 +40,22 @@ export default function AppShell({ children, isAdmin }: { children: React.ReactN
               </Link>
             </li>
           ))}
-          {isAdmin && (
-            <li>
-              <Link href="/admin" className={`nav-item${pathname.startsWith("/admin") ? " active" : ""}`}>
-                <span>⚙️</span>
-                <span>관리자</span>
-              </Link>
-            </li>
-          )}
         </ul>
         <button className="logout-btn" onClick={logout}>로그아웃</button>
       </nav>
+
+      {/* Page content */}
       <main className="page-content">{children}</main>
+
+      {/* Mobile bottom navigation */}
+      <nav className="bottom-nav">
+        {navItems.map(({ href, label, icon }) => (
+          <Link key={href} href={href} className={`bnav-item${pathname.startsWith(href) ? " active" : ""}`}>
+            <span className="bnav-icon">{icon}</span>
+            <span className="bnav-label">{label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

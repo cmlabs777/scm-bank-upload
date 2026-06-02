@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
+  Bar, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell,
-  LineChart, Line, CartesianGrid,
+  LineChart, Line, CartesianGrid, ComposedChart, ReferenceLine,
 } from "recharts";
 
 interface MonthData {
@@ -59,6 +59,11 @@ export default function ReportClient() {
   const [budgets,    setBudgets]    = useState<Budget[]>([]);
   const [loading,    setLoading]    = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthData|null>(null);
+  const [targetRate, setTargetRate] = useState(() => {
+    if (typeof window === "undefined") return 30;
+    const stored = localStorage.getItem("scm_savings_target");
+    return stored ? Number(stored) : 30;
+  });
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -81,6 +86,18 @@ export default function ReportClient() {
   const totalExpense = report.reduce((s,d)=>s+d.expense,0);
   const totalInvest  = report.reduce((s,d)=>s+d.investmentTotal,0);
   const nMonths      = monthsBetween(startMonth, endMonth);
+
+  // Savings rate calculations
+  const savingsData = report
+    .filter(d => d.income > 0)
+    .map(d => ({
+      name: d.month.slice(5),
+      rate: Math.round((d.income - d.expense) / d.income * 100),
+    }));
+  const avgRate    = savingsData.length ? Math.round(savingsData.reduce((s,d)=>s+d.rate,0)/savingsData.length) : 0;
+  const bestMonth  = savingsData.length ? savingsData.reduce((a,b) => a.rate > b.rate ? a : b) : null;
+  const worstMonth = savingsData.length ? savingsData.reduce((a,b) => a.rate < b.rate ? a : b) : null;
+  const onTargetCount = savingsData.filter(d => d.rate >= targetRate).length;
 
   const barData = report.map(d=>({
     name: d.month.slice(5),
@@ -140,15 +157,15 @@ export default function ReportClient() {
           <div className="chart-panel">
             <h2>월별 수입·지출</h2>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={barData} margin={{top:8,right:16,left:8,bottom:0}}>
+              <ComposedChart data={barData} margin={{top:8,right:16,left:8,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5d9cc"/>
                 <XAxis dataKey="name" tick={{fontSize:12}}/>
                 <YAxis tickFormatter={fmt} tick={{fontSize:11}}/>
                 <Tooltip formatter={(v)=>fmtFull(Number(v))}/>
                 <Legend/>
-                <Bar dataKey="수입" fill="#6b8e6b" radius={[3,3,0,0]}/>
+                <Bar dataKey="수입" fill="#3d7336" radius={[3,3,0,0]}/>
                 <Bar dataKey="지출" fill="#c4572a" radius={[3,3,0,0]}/>
-              </BarChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
 
@@ -160,10 +177,75 @@ export default function ReportClient() {
                 <XAxis dataKey="name" tick={{fontSize:12}}/>
                 <YAxis tickFormatter={fmt} tick={{fontSize:11}}/>
                 <Tooltip formatter={(v)=>fmtFull(Number(v))}/>
-                <Line type="monotone" dataKey="순수익" stroke="#d09828" strokeWidth={2} dot={{r:4,fill:"#d09828"}}/>
+                <Line type="monotone" dataKey="순수익" stroke="#d09828" strokeWidth={2.5} dot={{r:4,fill:"#d09828",strokeWidth:0}}/>
               </LineChart>
             </ResponsiveContainer>
           </div>
+
+          {/* ── 저축률 ── */}
+          {savingsData.length > 0 && (
+            <div className="chart-panel">
+              <div className="savings-header">
+                <h2>저축률 분석</h2>
+                <div className="savings-target-row">
+                  <span>목표 저축률</span>
+                  <input
+                    className="savings-target-input"
+                    type="number" min="-100" max="100"
+                    value={targetRate}
+                    onChange={e => {
+                      const v = Number(e.target.value);
+                      setTargetRate(v);
+                      localStorage.setItem("scm_savings_target", String(v));
+                    }}
+                  />
+                  <span>%</span>
+                </div>
+              </div>
+
+              <div className="savings-stats">
+                <div className="savings-stat">
+                  <div className="savings-stat-label">평균 저축률</div>
+                  <div className={`savings-stat-value ${avgRate>=targetRate?"income-text":"expense-text"}`}>{avgRate}%</div>
+                </div>
+                <div className="savings-stat">
+                  <div className="savings-stat-label">최고 달</div>
+                  <div className="savings-stat-value income-text">{bestMonth ? `${bestMonth.name} ${bestMonth.rate}%` : "-"}</div>
+                </div>
+                <div className="savings-stat">
+                  <div className="savings-stat-label">최저 달</div>
+                  <div className="savings-stat-value expense-text">{worstMonth ? `${worstMonth.name} ${worstMonth.rate}%` : "-"}</div>
+                </div>
+                <div className="savings-stat">
+                  <div className="savings-stat-label">목표 달성</div>
+                  <div className="savings-stat-value">
+                    {onTargetCount}
+                    <span style={{fontSize:13,fontWeight:500,color:"var(--text-muted)"}}>/{savingsData.length}개월</span>
+                  </div>
+                </div>
+              </div>
+
+              <ResponsiveContainer width="100%" height={180}>
+                <ComposedChart data={savingsData} margin={{top:4,right:16,left:0,bottom:0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5d9cc"/>
+                  <XAxis dataKey="name" tick={{fontSize:12}}/>
+                  <YAxis tickFormatter={v=>`${v}%`} tick={{fontSize:11}} domain={["auto","auto"]}/>
+                  <Tooltip formatter={(v) => [`${v}%`, "저축률"]}/>
+                  <ReferenceLine
+                    y={targetRate}
+                    stroke="var(--gold)"
+                    strokeDasharray="5 4"
+                    label={{value:`목표 ${targetRate}%`, position:"insideTopRight", fill:"var(--gold)", fontSize:11, fontWeight:700}}
+                  />
+                  <Bar dataKey="rate" radius={[3,3,0,0]} maxBarSize={44}>
+                    {savingsData.map((d, i) => (
+                      <Cell key={i} fill={d.rate >= targetRate ? "#3d7336" : "#c4572a"} />
+                    ))}
+                  </Bar>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           {pieData.length>0 && (
             <div className="chart-panel chart-row">
@@ -194,7 +276,6 @@ export default function ReportClient() {
             </div>
           )}
 
-          {/* ── 예산 vs 실적 ── */}
           {hasBudget && (
             <div className="chart-panel">
               <h2>예산 vs 실적 <small style={{fontWeight:400,color:"var(--text-muted)"}}>({nMonths}개월 기준)</small></h2>
@@ -293,13 +374,13 @@ export default function ReportClient() {
                 <div className="chart-panel">
                   <h2>월별 투자금액</h2>
                   <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={invBarData} margin={{top:8,right:16,left:8,bottom:0}}>
+                    <ComposedChart data={invBarData} margin={{top:8,right:16,left:8,bottom:0}}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5d9cc"/>
                       <XAxis dataKey="name" tick={{fontSize:12}}/>
                       <YAxis tickFormatter={fmt} tick={{fontSize:11}}/>
                       <Tooltip formatter={(v)=>fmtFull(Number(v))}/>
                       <Bar dataKey="투자금액" fill="#5a7a9e" radius={[3,3,0,0]}/>
-                    </BarChart>
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               )}

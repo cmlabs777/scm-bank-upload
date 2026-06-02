@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#c4572a"/>
+  <rect x="16" y="16" width="480" height="480" rx="98" fill="#d0632e"/>
+  <circle cx="256" cy="256" r="150" fill="rgba(255,255,255,0.10)"/>
+  <text x="256" y="314" font-size="182" font-weight="900" text-anchor="middle" fill="#fff" font-family="-apple-system,sans-serif">₩</text>
+</svg>
