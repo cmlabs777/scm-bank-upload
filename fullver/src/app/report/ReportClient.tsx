@@ -101,11 +101,11 @@ export default function ReportClient() {
       <div className="page-header">
         <h1>리포트</h1>
         <div className="month-range-picker">
-          <select value={startMonth} onChange={e=>setStartMonth(e.target.value)} className="year-select">
+          <select value={startMonth} onChange={e=>{ const v=e.target.value; setStartMonth(v); if(v>endMonth) setEndMonth(v); }} className="year-select">
             {MONTH_OPTS.map(m=><option key={m} value={m}>{m}</option>)}
           </select>
           <span className="range-sep">~</span>
-          <select value={endMonth} onChange={e=>setEndMonth(e.target.value)} className="year-select">
+          <select value={endMonth} onChange={e=>{ const v=e.target.value; setEndMonth(v); if(v<startMonth) setStartMonth(v); }} className="year-select">
             {MONTH_OPTS.map(m=><option key={m} value={m}>{m}</option>)}
           </select>
         </div>

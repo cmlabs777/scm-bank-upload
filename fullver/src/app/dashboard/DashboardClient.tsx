@@ -136,6 +136,7 @@ export default function DashboardClient() {
 
   const [investForm, setInvestForm] = useState<InvestForm>(EMPTY_INVEST);
   const [investStatus, setInvestStatus] = useState("");
+  const [investSubmitting, setInvestSubmitting] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -220,7 +221,9 @@ export default function DashboardClient() {
   }
 
   async function handleInvestSubmit(e: React.FormEvent) {
-    e.preventDefault(); setInvestStatus("");
+    e.preventDefault();
+    if (investSubmitting) return;
+    setInvestStatus(""); setInvestSubmitting(true);
     try {
       const res = await fetch("/api/investments", {
         method:"POST", headers:{"Content-Type":"application/json"},
@@ -231,7 +234,7 @@ export default function DashboardClient() {
       const data = await res.json();
       if (data.ok) { setInvestStatus("✓ 저장 완료"); setInvestForm(EMPTY_INVEST); }
       else setInvestStatus("오류");
-    } catch { setInvestStatus("서버 오류"); }
+    } catch { setInvestStatus("서버 오류"); } finally { setInvestSubmitting(false); }
   }
 
   const expTypes = types.filter(t=>t.kind==="expense");
@@ -373,7 +376,7 @@ export default function DashboardClient() {
             </div>
             <div className="field"><label>비고</label><input value={investForm.note} onChange={e=>setInvestForm(f=>({...f,note:e.target.value}))} placeholder="메모"/></div>
             {investStatus && <p className="summary">{investStatus}</p>}
-            <div className="toolbar end"><button type="submit" className="solid-button">저장</button></div>
+            <div className="toolbar end"><button type="submit" className="solid-button" disabled={investSubmitting}>{investSubmitting?"저장 중…":"저장"}</button></div>
           </form>
         </div>
       )}

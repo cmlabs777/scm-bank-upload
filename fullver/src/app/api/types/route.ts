@@ -12,7 +12,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session || session.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { name, kind } = await req.json();
   if (!name || !kind) return NextResponse.json({ error: "name, kind required" }, { status: 400 });
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session || session.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await req.json();
   await sql`DELETE FROM transaction_types WHERE id = ${id}`;
