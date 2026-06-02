@@ -42,6 +42,7 @@ function routeAction_(action, payload) {
     if (action === "appendWithdrawals") return { ok: true, data: appendWithdrawals_(payload.rows || []) };
     if (action === "repairWithdrawalDates") return { ok: true, data: repairWithdrawalDates_() };
     if (action === "inspectMonth") return { ok: true, data: inspectMonth_() };
+    if (action === "getAllWithdrawals") return { ok: true, data: getAllWithdrawals_() };
     return { ok: false, error: "Unknown action: " + action };
   } catch (error) {
     return { ok: false, error: String(error && error.message ? error.message : error) };
@@ -360,6 +361,48 @@ function inspectMonth_() {
       formula: formulas[i][0],
     };
   });
+}
+
+function getAllWithdrawals_() {
+  var sheet = getSpreadsheet_().getSheetByName(WITHDRAWAL_SHEET_NAME);
+  if (!sheet) throw new Error("출금내역 탭을 찾을 수 없습니다.");
+
+  var table = findWithdrawalTable_(sheet);
+  var keyColumn = ensureUploadKeyColumn_(sheet, table);
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= table.headerRow) return [];
+
+  var rowCount = lastRow - table.headerRow;
+  var colCount = Math.max(keyColumn, table.maxColumn);
+  var data = sheet.getRange(table.headerRow + 1, 1, rowCount, colCount).getValues();
+
+  return data.map(function(row) {
+    var rawDate = row[table.columns.date - 1];
+    var dateObj = rawDate instanceof Date ? rawDate : parseSheetDate_(rawDate);
+    var tradedAt = "";
+    if (dateObj) {
+      var y = dateObj.getFullYear();
+      var mo = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+      var d = ("0" + dateObj.getDate()).slice(-2);
+      tradedAt = y + "." + mo + "." + d + " 00:00:00";
+    }
+    var amount = Math.abs(Number(row[table.columns.amount - 1]) || 0);
+    var month = String(row[table.columns.month - 1] || "").trim();
+    if (!month && dateObj) {
+      var y2 = dateObj.getFullYear();
+      var mo2 = String(dateObj.getMonth() + 1).padStart("0", 2);
+      month = y2 + "-" + mo2;
+    }
+    return {
+      kind: "expense",
+      month: month,
+      traded_at: tradedAt,
+      amount: amount,
+      type_name: String(row[table.columns.content - 1] || "").trim(),
+      note: String(row[table.columns.note - 1] || "").trim(),
+      upload_key: String(row[keyColumn - 1] || "").trim(),
+    };
+  }).filter(function(r) { return r.upload_key && r.upload_key.indexOf("|") !== -1 && r.amount > 0 && r.traded_at; });
 }
 
 function normalizeArray_(values) {
