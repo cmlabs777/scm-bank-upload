@@ -515,3 +515,79 @@ tr:hover td { background: #f9f3eb; }
   box-sizing: border-box;
   color: var(--text);
 }
+
+/* ── Search bar ─────────────────────────────────── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.search-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color .15s;
+}
+.search-input:focus { outline: none; border-color: var(--accent); }
+.amount-range-input {
+  width: 110px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: right;
+}
+.amount-range-input:focus { outline: none; border-color: var(--accent); }
+
+/* ── Budget progress bars ───────────────────────── */
+.budget-list { display: flex; flex-direction: column; gap: 14px; }
+.budget-row {}
+.budget-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.budget-name { font-weight: 600; color: var(--text); }
+.budget-nums { display: flex; align-items: baseline; gap: 4px; }
+.budget-pct  { margin-left: 8px; font-size: 12px; font-weight: 700; color: var(--green); }
+.budget-pct.over { color: var(--red); }
+.budget-bar-track {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.budget-bar-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+.budget-bar-fill.over { background: var(--red); }
+
+/* ── Admin misc ─────────────────────────────────── */
+.hint-text { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
+.keyword-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0e8d8;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--accent);
+}

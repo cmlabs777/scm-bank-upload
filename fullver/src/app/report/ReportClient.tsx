@@ -15,6 +15,7 @@ interface MonthData {
 }
 interface InvestCategory { category: string; total: number; count: number; }
 interface InvestKind     { kind: string; total: number; count: number; avg_return: number; }
+interface Budget         { id: number; type_name: string; kind: string; monthly_amount: number; }
 
 const PALETTE = ["#c4572a","#d09828","#8b5e3c","#6b8e6b","#5a7a9e","#c4874a","#9e6b8a","#4a8e8e","#a08060","#7a8e4a"];
 
@@ -23,8 +24,8 @@ function fmtFull(n: number) { return n.toLocaleString()+"원"; }
 
 function defaultRange() {
   const now = new Date();
-  const end = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-  const s   = new Date(now.getFullYear(), now.getMonth()-5, 1);
+  const end   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  const s     = new Date(now.getFullYear(), now.getMonth()-5, 1);
   const start = `${s.getFullYear()}-${String(s.getMonth()+1).padStart(2,"0")}`;
   return { start, end };
 }
@@ -38,17 +39,25 @@ function genMonthOptions() {
   }
   return opts;
 }
+
+function monthsBetween(start: string, end: string) {
+  const [sy, sm] = start.split("-").map(Number);
+  const [ey, em] = end.split("-").map(Number);
+  return Math.max(1, (ey - sy) * 12 + (em - sm) + 1);
+}
+
 const MONTH_OPTS = genMonthOptions();
 
 export default function ReportClient() {
   const def = defaultRange();
   const [startMonth, setStartMonth] = useState(def.start);
   const [endMonth,   setEndMonth]   = useState(def.end);
-  const [tab, setTab] = useState<"cashflow"|"invest">("cashflow");
-  const [report,   setReport]   = useState<MonthData[]>([]);
-  const [invCat,   setInvCat]   = useState<InvestCategory[]>([]);
-  const [invKind,  setInvKind]  = useState<InvestKind[]>([]);
-  const [loading,  setLoading]  = useState(false);
+  const [tab,        setTab]        = useState<"cashflow"|"invest">("cashflow");
+  const [report,     setReport]     = useState<MonthData[]>([]);
+  const [invCat,     setInvCat]     = useState<InvestCategory[]>([]);
+  const [invKind,    setInvKind]    = useState<InvestKind[]>([]);
+  const [budgets,    setBudgets]    = useState<Budget[]>([]);
+  const [loading,    setLoading]    = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthData|null>(null);
 
   useEffect(() => {
@@ -59,6 +68,7 @@ export default function ReportClient() {
         setReport(d.report || []);
         setInvCat(d.investByCategory || []);
         setInvKind(d.investByKind || []);
+        setBudgets(d.budgets || []);
         setSelectedMonth(null);
       })
       .finally(()=>setLoading(false));
@@ -67,6 +77,7 @@ export default function ReportClient() {
   const totalIncome  = report.reduce((s,d)=>s+d.income,0);
   const totalExpense = report.reduce((s,d)=>s+d.expense,0);
   const totalInvest  = report.reduce((s,d)=>s+d.investmentTotal,0);
+  const nMonths      = monthsBetween(startMonth, endMonth);
 
   const barData = report.map(d=>({
     name: d.month.slice(5),
@@ -78,6 +89,9 @@ export default function ReportClient() {
   const pieData = Object.entries(expTypeAgg).sort((a,b)=>b[1]-a[1]).map(([name,value])=>({name,value}));
 
   const invBarData = report.map(d=>({ name:d.month.slice(5), 투자금액:d.investmentTotal }));
+
+  const expBudgets = budgets.filter(b=>b.kind==="expense");
+  const hasBudget  = expBudgets.length > 0;
 
   return (
     <>
@@ -96,7 +110,7 @@ export default function ReportClient() {
 
       <div className="tab-bar" style={{marginBottom:20}}>
         <button className={`tab-btn${tab==="cashflow"?" active":""}`} onClick={()=>setTab("cashflow")}>💰 수입·지출</button>
-        <button className={`tab-btn${tab==="invest"?" active":""}`} onClick={()=>setTab("invest")}>📈 투자내역</button>
+        <button className={`tab-btn${tab==="invest"?" active":""}`}   onClick={()=>setTab("invest")}>📈 투자내역</button>
       </div>
 
       {loading && <p className="loading-hint">불러오는 중…</p>}
@@ -177,6 +191,36 @@ export default function ReportClient() {
             </div>
           )}
 
+          {/* ── 예산 vs 실적 ── */}
+          {hasBudget && (
+            <div className="chart-panel">
+              <h2>예산 vs 실적 <small style={{fontWeight:400,color:"var(--text-muted)"}}>({nMonths}개월 기준)</small></h2>
+              <div className="budget-list">
+                {expBudgets.map(b=>{
+                  const totalBudget = b.monthly_amount * nMonths;
+                  const actual      = expTypeAgg[b.type_name] ?? 0;
+                  const pct         = totalBudget > 0 ? Math.min(Math.round(actual / totalBudget * 100), 999) : 0;
+                  const over        = pct > 100;
+                  return (
+                    <div key={b.id} className="budget-row">
+                      <div className="budget-meta">
+                        <span className="budget-name">{b.type_name}</span>
+                        <span className="budget-nums">
+                          <span className={over?"expense-text":""}>{fmtFull(actual)}</span>
+                          <span style={{color:"var(--text-muted)"}}> / {fmtFull(totalBudget)}</span>
+                          <span className={`budget-pct ${over?"over":""}`}>{pct}%</span>
+                        </span>
+                      </div>
+                      <div className="budget-bar-track">
+                        <div className={`budget-bar-fill ${over?"over":""}`} style={{width:`${Math.min(pct,100)}%`}}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="chart-panel">
             <h2>월별 상세</h2>
             <div className="monthly-table-wrap">
@@ -228,10 +272,10 @@ export default function ReportClient() {
                   <span className="card-label">총 투자금액</span>
                   <span className="card-value">{fmtFull(totalInvest)}</span>
                 </div>
-                {invKind.filter(k=>k.kind==="매도").length>0 && (
+                {invKind.find(k=>k.kind==="매도") && (
                   <div className="summary-card income">
                     <span className="card-label">매도금액</span>
-                    <span className="card-value">{fmtFull(invKind.find(k=>k.kind==="매도")?.total??0)}</span>
+                    <span className="card-value">{fmtFull(invKind.find(k=>k.kind==="매도")!.total)}</span>
                   </div>
                 )}
                 {invKind.filter(k=>k.kind==="배당"||k.kind==="이자").length>0 && (

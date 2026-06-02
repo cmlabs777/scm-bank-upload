@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const startMonth = searchParams.get("startMonth");
   const endMonth   = searchParams.get("endMonth");
 
-  const [monthlyRows, typeRows, investRows, investByCategory, investByKind] = await Promise.all([
+  const [monthlyRows, typeRows, investRows, investByCategory, investByKind, budgets] = await Promise.all([
     startMonth && endMonth
       ? sql`SELECT month, kind, SUM(amount)::int as total FROM transactions WHERE month >= ${startMonth} AND month <= ${endMonth} GROUP BY month, kind ORDER BY month`
       : sql`SELECT month, kind, SUM(amount)::int as total FROM transactions GROUP BY month, kind ORDER BY month`,
@@ -30,12 +30,15 @@ export async function GET(req: NextRequest) {
     startMonth && endMonth
       ? sql`SELECT kind, SUM(amount)::numeric as total, COUNT(*)::int as count, AVG(return_rate)::numeric as avg_return FROM investments WHERE LEFT(traded_at,7) >= ${startMonth} AND LEFT(traded_at,7) <= ${endMonth} GROUP BY kind ORDER BY total DESC`
       : sql`SELECT kind, SUM(amount)::numeric as total, COUNT(*)::int as count, AVG(return_rate)::numeric as avg_return FROM investments GROUP BY kind ORDER BY total DESC`,
+
+    sql`SELECT id, type_name, kind, monthly_amount FROM budgets ORDER BY kind, type_name`.catch(() => [] as unknown[]),
   ]) as [
     Array<{ month: string; kind: string; total: number }>,
     Array<{ month: string; type_name: string; kind: string; total: number }>,
     Array<{ month: string; total: number; count: number }>,
     Array<{ category: string; total: number; count: number }>,
     Array<{ kind: string; total: number; count: number; avg_return: number }>,
+    Array<{ id: number; type_name: string; kind: string; monthly_amount: number }>,
   ];
 
   const months = new Set<string>([
@@ -67,5 +70,6 @@ export async function GET(req: NextRequest) {
     report,
     investByCategory: investByCategory.map(r=>({...r, total:Number(r.total)})),
     investByKind:     investByKind.map(r=>({...r, total:Number(r.total), avg_return:Number(r.avg_return)})),
+    budgets,
   });
 }

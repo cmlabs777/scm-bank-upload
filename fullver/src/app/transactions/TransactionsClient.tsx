@@ -21,20 +21,23 @@ for (let i = 0; i < 24; i++) {
 }
 
 function tradedAtToDateInput(t: string): string {
-  // "2026.05.02 00:00:00" → "2026-05-02"
   const m = t.match(/(\d{4})\.(\d{2})\.(\d{2})/);
   return m ? `${m[1]}-${m[2]}-${m[3]}` : t.slice(0,10);
 }
 
 export default function TransactionsClient() {
-  const [rows, setRows] = useState<Transaction[]>([]);
-  const [types, setTypes] = useState<TxType[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [rows,        setRows]        = useState<Transaction[]>([]);
+  const [types,       setTypes]       = useState<TxType[]>([]);
+  const [loading,     setLoading]     = useState(false);
   const [monthFilter, setMonthFilter] = useState(MONTHS[0]);
-  const [kindFilter, setKindFilter] = useState("all");
-  const [editId, setEditId] = useState<number|null>(null);
-  const [editForm, setEditForm] = useState<EditState|null>(null);
-  const [saving, setSaving] = useState(false);
+  const [kindFilter,  setKindFilter]  = useState("all");
+  const [search,      setSearch]      = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [amountMin,   setAmountMin]   = useState("");
+  const [amountMax,   setAmountMax]   = useState("");
+  const [editId,      setEditId]      = useState<number|null>(null);
+  const [editForm,    setEditForm]    = useState<EditState|null>(null);
+  const [saving,      setSaving]      = useState(false);
 
   useEffect(() => {
     fetch("/api/types").then(r=>r.json()).then(setTypes);
@@ -43,15 +46,30 @@ export default function TransactionsClient() {
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (monthFilter) params.set("month", monthFilter);
-    if (kindFilter !== "all") params.set("kind", kindFilter);
+    if (monthFilter)            params.set("month",     monthFilter);
+    if (kindFilter !== "all")   params.set("kind",      kindFilter);
+    if (search.trim())          params.set("search",    search.trim());
+    if (amountMin)              params.set("amountMin", amountMin);
+    if (amountMax)              params.set("amountMax", amountMax);
     const data = await fetch(`/api/transactions?${params}`).then(r=>r.json());
     setRows(Array.isArray(data) ? data : []);
     setLoading(false);
     setEditId(null); setEditForm(null);
-  }, [monthFilter, kindFilter]);
+  }, [monthFilter, kindFilter, search, amountMin, amountMax]);
 
   useEffect(() => { load(); }, [load]);
+
+  function applySearch(e: React.FormEvent) {
+    e.preventDefault();
+    setSearch(searchInput);
+    setAmountMin(amountMin);
+    setAmountMax(amountMax);
+  }
+
+  function clearSearch() {
+    setSearchInput(""); setSearch("");
+    setAmountMin(""); setAmountMax("");
+  }
 
   function startEdit(row: Transaction) {
     setEditId(row.id);
@@ -85,8 +103,9 @@ export default function TransactionsClient() {
     <>
       <div className="page-header"><h1>거래내역</h1></div>
 
+      {/* ── 필터 바 ── */}
       <div className="filter-bar">
-        <select className="year-select" value={monthFilter} onChange={e=>setMonthFilter(e.target.value)}>
+        <select className="year-select" style={{marginLeft:0}} value={monthFilter} onChange={e=>setMonthFilter(e.target.value)}>
           <option value="">전체 기간</option>
           {MONTHS.map(m=><option key={m} value={m}>{m}</option>)}
         </select>
@@ -100,6 +119,27 @@ export default function TransactionsClient() {
         <button className="ghost-button" onClick={load}>새로고침</button>
       </div>
 
+      {/* ── 검색 바 ── */}
+      <form className="search-bar" onSubmit={applySearch}>
+        <input
+          className="search-input" type="text" placeholder="메모·유형 검색…"
+          value={searchInput} onChange={e=>setSearchInput(e.target.value)}
+        />
+        <input
+          className="amount-range-input" type="number" placeholder="최소 금액"
+          value={amountMin} onChange={e=>setAmountMin(e.target.value)}
+        />
+        <span className="range-sep">~</span>
+        <input
+          className="amount-range-input" type="number" placeholder="최대 금액"
+          value={amountMax} onChange={e=>setAmountMax(e.target.value)}
+        />
+        <button type="submit" className="solid-button" style={{padding:"5px 16px"}}>검색</button>
+        {(search || amountMin || amountMax) && (
+          <button type="button" className="ghost-button" onClick={clearSearch}>초기화</button>
+        )}
+      </form>
+
       {!loading && rows.length>0 && (
         <div className="summary-cards" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:16}}>
           <div className="summary-card"><span className="card-label">건수</span><span className="card-value">{rows.length}건</span></div>
@@ -109,7 +149,7 @@ export default function TransactionsClient() {
       )}
 
       {loading && <p className="loading-hint">불러오는 중…</p>}
-      {!loading && rows.length===0 && <p className="empty-hint">해당 기간에 데이터가 없습니다.</p>}
+      {!loading && rows.length===0 && <p className="empty-hint">해당 조건에 데이터가 없습니다.</p>}
 
       {!loading && rows.length>0 && (
         <div className="panel" style={{padding:0}}>
