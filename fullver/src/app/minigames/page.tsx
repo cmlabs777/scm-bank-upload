@@ -24,6 +24,12 @@ const GAMES = [
     title: "테트리스",
     desc: "SRS 정식 버전 테트리스. 7-bag, 락딜레이, 고스트 피스 포함.",
   },
+  {
+    href: "/minigames/omok",
+    icon: "⚫",
+    title: "오목",
+    desc: "AI와 1:1 대결. 쉬움·보통·어려움 난이도 선택 가능.",
+  },
 ];
 
 export default async function MiniGamesPage() {

@@ -2737,3 +2737,105 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   .tet-btn { height: 46px; min-width: 44px; font-size: 16px; }
   .tet-btn-xl { font-size: 20px; }
 }
+
+/* ── Omok (오목) ──────────────────────────────────────── */
+.omok-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+.omok-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.omok-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.omok-diff-row {
+  display: flex;
+  gap: 6px;
+}
+
+.omok-diff-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text-sub);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.omok-diff-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.omok-diff-btn:active { transform: scale(.95); }
+
+.omok-board-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.omok-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.52);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.omok-result {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 28px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.omok-result-icon  { font-size: 44px; line-height: 1; }
+.omok-result-label { font-size: 24px; font-weight: 700; color: var(--text); }
+
+.omok-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.omok-hint {
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.omok-thinking {
+  color: var(--accent);
+  animation: omok-blink 1s ease infinite;
+}
+
+@keyframes omok-blink {
+  0%,100% { opacity: 1; }
+  50%     { opacity: .4; }
+}
