@@ -101,7 +101,8 @@ function hexToRgba(hex: string, alpha: number) {
 export default function HeroClient({ currentUserId }: { currentUserId: number }) {
   const [ddays,   setDDays]   = useState<DDay[]>([]);
   const [fortunes, setFortunes] = useState<FortuneProfile[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [fortuneLoading, setFortuneLoading] = useState(false);
   const [tick,    setTick]    = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editing,  setEditing]  = useState<DDay | null>(null);
@@ -118,10 +119,12 @@ export default function HeroClient({ currentUserId }: { currentUserId: number })
         .catch(() => {})
         .finally(() => setLoading(false));
 
+      setFortuneLoading(true);
       fetch("/api/fortune")
         .then(r => r.ok ? r.json() : Promise.reject())
         .then((data: { profiles: FortuneProfile[] }) => { setFortunes(data.profiles || []); })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setFortuneLoading(false));
     }, 0);
     return () => window.clearTimeout(timer);
   }, [tick]);
@@ -161,8 +164,11 @@ export default function HeroClient({ currentUserId }: { currentUserId: number })
 
   async function remove(id: number) {
     if (!confirm("이 디데이를 삭제할까요?")) return;
-    const res = await fetch(`/api/ddays/${id}`, { method: "DELETE" });
-    if (res.ok) setDDays(p => p.filter(d => d.id !== id));
+    try {
+      const res = await fetch(`/api/ddays/${id}`, { method: "DELETE" });
+      if (res.ok) setDDays(p => p.filter(d => d.id !== id));
+      else setStatus("삭제에 실패했습니다.");
+    } catch { setStatus("삭제에 실패했습니다."); }
   }
 
   const sorted = sortDays(ddays);
@@ -235,14 +241,15 @@ export default function HeroClient({ currentUserId }: { currentUserId: number })
         <div className="hero-section-hd">
           <span className="hero-section-title">오늘의 운세</span>
         </div>
+        {fortuneLoading && <p className="loading-hint" style={{padding:"16px 0"}}>운세 불러오는 중…</p>}
         <div className="fortune-grid">
-          {fortunes.length === 0 && (
+          {!fortuneLoading && fortunes.length === 0 && (
             <div className="fortune-card fortune-card-empty">
               <p className="fortune-name">운세 설정이 필요해요</p>
               <p className="fortune-summary">관리자 화면에서 나와 배우자의 생년월일을 입력하면 매일 운세가 표시됩니다.</p>
             </div>
           )}
-          {fortunes.map(profile => (
+          {!fortuneLoading && fortunes.map(profile => (
             <div key={profile.slot} className="fortune-card">
               <div className="fortune-top">
                 <div>
