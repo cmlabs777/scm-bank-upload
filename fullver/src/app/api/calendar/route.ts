@@ -10,9 +10,13 @@ export async function GET(req: NextRequest) {
   const year  = p.get("year")  || String(new Date().getFullYear());
   const month = p.get("month") || String(new Date().getMonth() + 1);
 
-  const ym = `${year}-${String(month).padStart(2, "0")}`;
-  const firstDay = `${ym}-01`;
-  const lastDay  = `${ym}-31`; // DATE comparison handles overflow
+  const y = Number(year);
+  const m = Number(month);
+  const ym = `${year}-${String(m).padStart(2, "0")}`;
+  const firstDay   = `${ym}-01`;
+  // new Date(y, m, 0) = last day of month m (1-indexed) — avoids invalid dates like "06-31"
+  const lastDayNum = new Date(y, m, 0).getDate();
+  const lastDay    = `${ym}-${String(lastDayNum).padStart(2, "0")}`;
 
   const rows = await sql`
     SELECT
@@ -27,8 +31,10 @@ export async function GET(req: NextRequest) {
     JOIN users u ON u.id = e.user_id
     WHERE
       e.start_date <= ${lastDay}::date
-      AND (e.end_date IS NULL AND e.start_date >= ${firstDay}::date
-           OR e.end_date >= ${firstDay}::date)
+      AND (
+        (e.end_date IS NULL AND e.start_date >= ${firstDay}::date)
+        OR e.end_date >= ${firstDay}::date
+      )
     ORDER BY e.start_date, e.start_time NULLS LAST
   `;
 
