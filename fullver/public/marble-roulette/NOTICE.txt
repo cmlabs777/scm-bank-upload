@@ -1,0 +1,12 @@
+Marble Roulette static embed
+
+This directory contains a modified static build of lazygyu/roulette.
+Source: https://github.com/lazygyu/roulette
+License: MIT, see LICENSE in this directory.
+
+Local modifications:
+- Removed third-party analytics scripts.
+- Disabled service worker registration.
+- Disabled remote keyword/sprite fetches.
+- Removed shop and notice entry points from the embedded UI.
+- Changed the default participant list for SCM mini game use.

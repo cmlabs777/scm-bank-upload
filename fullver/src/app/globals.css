@@ -1023,6 +1023,56 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   font-size: 14px;
   line-height: 1.55;
 }
+
+/* ── Marble roulette embed ─────────────────────── */
+.marble-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.marble-header {
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.marble-header p {
+  margin: 6px 0 0;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+.marble-frame-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #111;
+  box-shadow: var(--shadow-lg);
+  min-height: 660px;
+}
+.marble-frame {
+  width: 100%;
+  height: min(76vh, 820px);
+  min-height: 660px;
+  border: 0;
+  display: block;
+  background: #000;
+}
+.marble-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,.78);
+  font-size: 14px;
+  pointer-events: none;
+}
+.marble-credit {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
 @media (max-width: 980px) {
   .plinko-layout {
     grid-template-columns: 1fr;
@@ -1110,6 +1160,25 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   .minigame-card {
     min-height: 138px;
     padding: 18px;
+  }
+  .marble-page {
+    gap: 10px;
+  }
+  .marble-header {
+    align-items: stretch;
+  }
+  .marble-header .ghost-button {
+    align-self: flex-start;
+  }
+  .marble-frame-shell {
+    margin-left: -16px;
+    margin-right: -16px;
+    border-radius: 0;
+    min-height: calc(100dvh - 170px);
+  }
+  .marble-frame {
+    height: calc(100dvh - 170px);
+    min-height: 560px;
   }
 }
 

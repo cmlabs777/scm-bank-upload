@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 
 const DEV_SECRET = "scm-dev-secret-change-in-production";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/marble-roulette"];
 
 function getSecret() {
   const secret = process.env.JWT_SECRET || "";

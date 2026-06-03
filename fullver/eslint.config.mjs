@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     // GAS snippets are plain JS for copy-pasting, not app code
     "gas-append-snippet.js",
     "scripts/**",
+    "public/marble-roulette/**",
   ]),
 ]);
 
