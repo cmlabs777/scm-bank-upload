@@ -838,7 +838,8 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   .login-logo h1 { font-size: 26px; }
 
   /* ══════════════════════════════════════
-     Bottom nav — iOS tab bar style
+     Bottom nav — 수평 스크롤형 탭바
+     손가락으로 좌우로 밀면 숨겨진 탭이 나옴
      ══════════════════════════════════════ */
   .bottom-nav {
     display: flex;
@@ -849,23 +850,45 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
     -webkit-backdrop-filter: blur(28px) saturate(180%);
     border-top: 1px solid rgba(0,0,0,.07);
     z-index: 200;
-    padding: 6px 4px env(safe-area-inset-bottom, 10px);
+    padding: 6px 0 env(safe-area-inset-bottom, 10px);
     box-shadow: 0 -4px 28px rgba(0,0,0,.07);
-    gap: 0;
+
+    /* 수평 스크롤 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .bottom-nav::-webkit-scrollbar { display: none; }
+
+  /* 스크롤 가능함을 암시하는 오른쪽 페이드 */
+  .bottom-nav::after {
+    content: '';
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    width: 28px;
+    height: 62px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.85));
+    pointer-events: none;
+    z-index: 201;
   }
 
   .bnav-item {
-    flex: 1;
+    flex: 0 0 auto;           /* 고정 너비 — 스크롤 가능 */
+    min-width: 68px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3px 2px 5px;
+    padding: 3px 4px 5px;
     gap: 2px;
     color: #adadb8;
     text-decoration: none;
     transition: color .15s;
     min-height: 50px;
+    scroll-snap-align: start;
   }
 
   /* iOS-style: pill background behind active icon */
@@ -873,29 +896,25 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
     font-size: 22px;
     line-height: 1;
     display: block;
-    padding: 5px 14px;
+    padding: 5px 12px;
     border-radius: 10px;
     transition: background .2s, transform .12s cubic-bezier(.4,0,.2,1);
   }
   .bnav-item.active { color: var(--accent); }
-  .bnav-item.active .bnav-icon {
-    background: rgba(196,87,42,0.13);
-  }
+  .bnav-item.active .bnav-icon { background: rgba(196,87,42,0.13); }
+
   /* Remove old top-line indicator */
   .bnav-item::before { display: none !important; }
 
-  /* 탭 누름 피드백 — 강하게 */
-  .bnav-item:active {
-    opacity: .55;
-    transition: opacity .05s;
-  }
+  /* 탭 누름 피드백 */
+  .bnav-item:active { opacity: .55; transition: opacity .05s; }
   .bnav-item:active .bnav-icon {
     transform: scale(0.82);
     background: rgba(196,87,42,0.26);
     transition: transform .05s, background .05s;
   }
 
-  .bnav-label { font-size: 10px; font-weight: 600; letter-spacing: .1px; }
+  .bnav-label { font-size: 10px; font-weight: 600; letter-spacing: .1px; white-space: nowrap; }
 }
 
 /* ═══════════════════════════════════════════════════
