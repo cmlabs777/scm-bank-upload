@@ -450,6 +450,62 @@ npm run build
 결과는 저장하지 않는다.
 ```
 
+## 2026-06-03 Codex 추가 작업: 미니게임 메뉴 구조화
+
+요구사항:
+
+```text
+사다리와 공굴리기를 '미니게임' nav 메뉴명 하위 페이지로 넣기
+```
+
+반영 내용:
+
+- 네비게이션에서 개별 `사다리`, `공굴리기` 메뉴 제거
+- `미니게임` 메뉴 하나로 통합
+- `/minigames` 허브 페이지 추가
+- `/minigames/ladder` 하위 페이지로 사다리 이동
+- `/minigames/plinko` 하위 페이지로 공굴리기 이동
+- 기존 `/ladder`, `/plinko` URL은 새 경로로 redirect 처리
+
+관련 파일:
+
+```text
+src/components/AppShell.tsx
+src/app/minigames/page.tsx
+src/app/minigames/ladder/page.tsx
+src/app/minigames/ladder/LadderClient.tsx
+src/app/minigames/plinko/page.tsx
+src/app/minigames/plinko/PlinkoClient.tsx
+src/app/ladder/page.tsx
+src/app/plinko/page.tsx
+src/app/globals.css
+```
+
+검증:
+
+```bash
+npm run lint -- --no-cache
+npm run build
+```
+
+추가 확인:
+
+- build output에 `/minigames`, `/minigames/ladder`, `/minigames/plinko` 포함 확인
+- legacy `/ladder`, `/plinko`는 redirect-only route로 유지
+
+간단히 추가 가능한 미니게임 후보:
+
+- 룰렛: 후보를 원판에 넣고 회전해서 하나 뽑기
+- 카드 뒤집기: 여러 카드 중 하나에 당첨 숨기기
+- 주사위 대결: 나/배우자 주사위를 굴려 높은 쪽 선택
+- 가위바위보: 앱과 대결해서 이긴 사람이 메뉴 선택
+- 숫자 뽑기: 1~N 숫자 중 랜덤으로 순서/담당 정하기
+- 폭탄 피하기: 카드 중 폭탄을 피하면 당첨
+- 타이머 스톱: 움직이는 바를 멈춰 가까운 슬롯으로 당첨
+- 코인 플립: 두 후보만 있을 때 앞/뒤로 결정
+- 기억력 카드: 같은 그림 맞추기식 간단 카드게임
+- 색깔 뽑기: 각 후보에 색을 붙이고 랜덤 색으로 결정
+
 1. 운영 UI에서 `분류 규칙` 목록 필터를 추가하는 것을 권장
    - 현재 목록에는 구분 배지가 보이지만, 규칙이 많아지면 출금/입금 필터가 필요할 수 있음
 
