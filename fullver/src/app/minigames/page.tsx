@@ -18,6 +18,12 @@ const GAMES = [
     title: "공굴리기",
     desc: "공이 먼저 떨어진 순서대로 당첨 항목을 배정합니다.",
   },
+  {
+    href: "/minigames/tetris",
+    icon: "🟦",
+    title: "테트리스",
+    desc: "SRS 정식 버전 테트리스. 7-bag, 락딜레이, 고스트 피스 포함.",
+  },
 ];
 
 export default async function MiniGamesPage() {
