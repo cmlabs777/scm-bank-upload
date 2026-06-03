@@ -7,6 +7,7 @@ const NAV = [
   { href: "/dashboard",    label: "대시보드", icon: "🏠" },
   { href: "/transactions", label: "거래내역", icon: "📋" },
   { href: "/report",       label: "리포트",   icon: "📊" },
+  { href: "/calendar",     label: "캘린더",   icon: "📅" },
 ];
 
 export default function AppShell({ children, isAdmin }: { children: React.ReactNode; isAdmin?: boolean }) {

@@ -94,5 +94,23 @@ await client.query(`
     ON classification_rules(keyword, kind);
 `);
 
+await client.query(`
+  CREATE TABLE IF NOT EXISTS calendar_events (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL,
+    title       TEXT NOT NULL,
+    start_date  DATE NOT NULL,
+    end_date    DATE,
+    start_time  TIME,
+    end_time    TIME,
+    is_shared   BOOLEAN NOT NULL DEFAULT FALSE,
+    note        TEXT NOT NULL DEFAULT '',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_calendar_start ON calendar_events(start_date);
+  CREATE INDEX IF NOT EXISTS idx_calendar_uid   ON calendar_events(user_id);
+`);
+
 console.log("✓ Tables created (or already exist)");
 await client.end();
