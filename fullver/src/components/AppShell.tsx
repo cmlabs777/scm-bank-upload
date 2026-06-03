@@ -12,14 +12,6 @@ const NAV = [
   { href: "/posts",        label: "게시판", icon: "📝" },
 ];
 
-// Elements where horizontal swipe should NOT trigger page navigation
-const SCROLL_SELECTORS = [
-  ".filter-bar", ".tab-bar", ".kind-filter",
-  ".table-wrap", ".monthly-table-wrap",
-  ".cal-grid", ".cal-nav",
-  "input", "textarea", "select",
-];
-
 export default function AppShell({ children, isAdmin }: { children: React.ReactNode; isAdmin?: boolean }) {
   const pathname = usePathname();
   const router   = useRouter();
@@ -38,21 +30,17 @@ export default function AppShell({ children, isAdmin }: { children: React.ReactN
 
   const bottomNavItems = navItems.filter(n => n.href !== "/admin");
 
-  function onTouchStart(e: React.TouchEvent) {
+  function onNavTouchStart(e: React.TouchEvent) {
     txX.current = e.touches[0].clientX;
     txY.current = e.touches[0].clientY;
   }
 
-  function onTouchEnd(e: React.TouchEvent) {
+  function onNavTouchEnd(e: React.TouchEvent) {
     const dx = e.changedTouches[0].clientX - txX.current;
     const dy = e.changedTouches[0].clientY - txY.current;
 
-    // Must be a clear horizontal swipe (80px min, 2× dominant axis)
-    if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 2) return;
-
-    // Ignore swipe if it started inside a scrollable/interactive element
-    const target = e.target as Element;
-    if (SCROLL_SELECTORS.some(sel => target.closest(sel))) return;
+    // 수평 스와이프 판단: 60px 이상, 수직 움직임의 1.5배 이상
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
 
     const idx = bottomNavItems.findIndex(n => pathname.startsWith(n.href));
     if (idx === -1) return;
@@ -85,17 +73,15 @@ export default function AppShell({ children, isAdmin }: { children: React.ReactN
         <button className="logout-btn" onClick={logout}>로그아웃</button>
       </nav>
 
-      {/* Page content — swipe gesture area */}
-      <main
-        className="page-content"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        {children}
-      </main>
+      {/* Page content */}
+      <main className="page-content">{children}</main>
 
-      {/* Mobile bottom navigation — admin tab excluded */}
-      <nav className="bottom-nav">
+      {/* Mobile bottom nav — swipe left/right to navigate, admin excluded */}
+      <nav
+        className="bottom-nav"
+        onTouchStart={onNavTouchStart}
+        onTouchEnd={onNavTouchEnd}
+      >
         {bottomNavItems.map(({ href, label, icon }) => (
           <Link key={href} href={href} className={`bnav-item${pathname.startsWith(href) ? " active" : ""}`}>
             <span className="bnav-icon">{icon}</span>

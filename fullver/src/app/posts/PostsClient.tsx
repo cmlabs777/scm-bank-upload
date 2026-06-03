@@ -26,33 +26,30 @@ function preview(content: string, len = 80) {
 }
 
 export default function PostsClient({ currentUserId }: { currentUserId: number }) {
-  const [posts,   setPosts]   = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [filter,  setFilter]  = useState<"all"|"mine"|"partner">("all");
-  const [search,  setSearch]  = useState("");
+  const [posts,    setPosts]   = useState<Post[]>([]);
+  const [loading,  setLoading] = useState(false);
+  const [tick,     setTick]    = useState(0); // 저장/삭제 후 +1 → useEffect 재실행
+  const [filter,   setFilter]  = useState<"all"|"mine"|"partner">("all");
+  const [search,   setSearch]  = useState("");
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [showForm,  setShowForm]  = useState(false);
-  const [editing,   setEditing]   = useState<Post | null>(null);
-  const [form, setForm] = useState({ title: "", content: "" });
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editing,  setEditing]  = useState<Post | null>(null);
+  const [form,     setForm]     = useState({ title: "", content: "" });
+  const [saving,   setSaving]   = useState(false);
+  const [status,   setStatus]   = useState("");
 
+  // tick 이 바뀔 때마다 게시글 다시 로드
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setLoading(true);
       fetch("/api/posts")
-        .then(r => r.json())
-        .then(d => { if (Array.isArray(d)) setPosts(d); })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then((data: Post[]) => { setPosts(data); })
+        .catch(() => {})
         .finally(() => setLoading(false));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
-
-  function refresh() {
-    fetch("/api/posts")
-      .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setPosts(d); });
-  }
+  }, [tick]);
 
   const filtered = posts.filter(p => {
     if (filter === "mine"    && p.user_id !== currentUserId) return false;
@@ -78,8 +75,6 @@ export default function PostsClient({ currentUserId }: { currentUserId: number }
     setShowForm(true);
   }
 
-  function closeForm() { setShowForm(false); setEditing(null); }
-
   async function save() {
     if (!form.title.trim()) { setStatus("제목을 입력하세요."); return; }
     setSaving(true); setStatus("");
@@ -90,9 +85,11 @@ export default function PostsClient({ currentUserId }: { currentUserId: number }
         method, headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) { setStatus("저장 오류"); return; }
-      closeForm();
-      refresh();
+      if (!res.ok) { setStatus("저장 오류가 발생했습니다."); return; }
+      // 모달 닫고 목록 새로고침
+      setShowForm(false);
+      setEditing(null);
+      setTick(t => t + 1);
     } catch { setStatus("서버 오류"); }
     finally { setSaving(false); }
   }
@@ -116,7 +113,6 @@ export default function PostsClient({ currentUserId }: { currentUserId: number }
         <button className="solid-button" onClick={openWrite}>+ 글쓰기</button>
       </div>
 
-      {/* 필터 + 검색 */}
       <div className="posts-toolbar">
         <div className="kind-filter">
           {(["all","mine","partner"] as const).map(f => (
@@ -127,8 +123,7 @@ export default function PostsClient({ currentUserId }: { currentUserId: number }
         </div>
         <input
           className="search-input posts-search"
-          type="text"
-          placeholder="제목·내용 검색…"
+          type="text" placeholder="제목·내용 검색…"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -141,14 +136,12 @@ export default function PostsClient({ currentUserId }: { currentUserId: number }
         </p>
       )}
 
-      {/* 게시글 목록 */}
       <div className="posts-list">
         {filtered.map(p => {
           const isOpen = expanded === p.id;
           const isMine = p.user_id === currentUserId;
           return (
             <div key={p.id} className={`post-card${isOpen?" post-card-open":""}`}>
-              {/* 헤더 — 클릭으로 펼치기 */}
               <div className="post-card-hd" onClick={() => setExpanded(isOpen ? null : p.id)}>
                 <div className="post-card-main">
                   <div className="post-card-title-row">
@@ -167,7 +160,6 @@ export default function PostsClient({ currentUserId }: { currentUserId: number }
                 </div>
               </div>
 
-              {/* 본문 */}
               {isOpen && (
                 <div className="post-card-body">
                   <pre className="post-content">{p.content || <span style={{color:"var(--text-muted)"}}>내용 없음</span>}</pre>
@@ -187,39 +179,34 @@ export default function PostsClient({ currentUserId }: { currentUserId: number }
         })}
       </div>
 
-      {/* 작성/수정 모달 */}
       {showForm && (
-        <div className="cal-overlay" onClick={closeForm}>
+        <div className="cal-overlay" onClick={() => { setShowForm(false); setEditing(null); }}>
           <div className="cal-modal" onClick={e => e.stopPropagation()}>
             <div className="cal-modal-hd">
               <span>{editing ? "글 수정" : "글쓰기"}</span>
-              <button className="cal-modal-close" onClick={closeForm}>✕</button>
+              <button className="cal-modal-close" onClick={() => { setShowForm(false); setEditing(null); }}>✕</button>
             </div>
             <div className="cal-modal-body">
               <div className="field">
                 <label>제목 *</label>
                 <input
-                  type="text"
-                  value={form.title}
+                  type="text" value={form.title}
                   onChange={e => setForm(f => ({...f, title: e.target.value}))}
-                  placeholder="제목을 입력하세요"
-                  autoFocus
+                  placeholder="제목을 입력하세요" autoFocus
                 />
               </div>
               <div className="field">
                 <label>내용</label>
                 <textarea
-                  className="post-textarea"
-                  value={form.content}
+                  className="post-textarea" value={form.content}
                   onChange={e => setForm(f => ({...f, content: e.target.value}))}
-                  placeholder="내용을 입력하세요"
-                  rows={8}
+                  placeholder="내용을 입력하세요" rows={8}
                 />
               </div>
               {status && <p className="post-status">{status}</p>}
             </div>
             <div className="cal-modal-foot">
-              <button className="ghost-button" onClick={closeForm}>취소</button>
+              <button className="ghost-button" onClick={() => { setShowForm(false); setEditing(null); }}>취소</button>
               <button
                 className="solid-button"
                 disabled={!form.title.trim() || saving}
