@@ -64,13 +64,14 @@ function getCands(b: Board): [number,number][] {
   return hasAny ? res : [[7,7]];
 }
 
+// 열린 4 = 사실상 필패, 열린 3 = 강한 위협
 function seqScore(cnt: number, open: number, forWhite: boolean): number {
   const s = forWhite ? 1 : -1;
   if (cnt >= 5) return s * 900000;
   if (open === 0) return 0;
-  if (cnt === 4) return s * (open === 2 ? 80000 : 10000);
-  if (cnt === 3) return s * (open === 2 ? 5000  : 600);
-  if (cnt === 2) return s * (open === 2 ? 200   : 20);
+  if (cnt === 4) return s * (open === 2 ? 500000 : 25000);
+  if (cnt === 3) return s * (open === 2 ? 15000  : 1200);
+  if (cnt === 2) return s * (open === 2 ? 500    : 60);
   return 0;
 }
 
@@ -94,13 +95,33 @@ function evalBoard(b: Board): number {
   return score;
 }
 
-function threatAt(b: Board, r: number, c: number, s: Stone): number {
-  let t = 0;
+// 한 교점을 놓았을 때 해당 라인들만 빠르게 스캔 (O(N), 정렬용)
+function lineScore(b: Board, r: number, c: number, s: Stone): number {
+  b[r][c] = s;
+  let sc = 0;
   for (const [dr,dc] of DIRS) {
-    const cnt = 1 + span(b,r,c,dr,dc,s) + span(b,r,c,-dr,-dc,s);
-    t += cnt * cnt;
+    let cnt = 1, open = 0;
+    let nr = r+dr, nc = c+dc;
+    while (inB(nr,nc) && b[nr][nc] === s) { cnt++; nr+=dr; nc+=dc; }
+    if (inB(nr,nc) && b[nr][nc] === EMPTY) open++;
+    nr = r-dr; nc = c-dc;
+    while (inB(nr,nc) && b[nr][nc] === s) { cnt++; nr-=dr; nc-=dc; }
+    if (inB(nr,nc) && b[nr][nc] === EMPTY) open++;
+    sc += seqScore(cnt, open, s === WHITE);
   }
-  return t;
+  b[r][c] = EMPTY;
+  return sc;
+}
+
+// 특정 돌 종류가 놓을 수 있는 즉시 승리 위치 개수
+function winCount(b: Board, s: Stone): number {
+  let cnt = 0;
+  for (const [r,c] of getCands(b)) {
+    b[r][c] = s;
+    if (checkWin(b,r,c,s)) cnt++;
+    b[r][c] = EMPTY;
+  }
+  return cnt;
 }
 
 function quickWin(b: Board, s: Stone): [number,number]|null {
@@ -113,6 +134,18 @@ function quickWin(b: Board, s: Stone): [number,number]|null {
   return null;
 }
 
+function sortCands(
+  b: Board, cands: [number,number][], maxing: boolean, limit: number
+): { r: number; c: number }[] {
+  return cands
+    .map(([r,c]) => ({
+      r, c,
+      t: lineScore(b,r,c,WHITE) - lineScore(b,r,c,BLACK),
+    }))
+    .sort((a,z) => maxing ? z.t-a.t : a.t-z.t)
+    .slice(0, limit);
+}
+
 function minimax(
   b: Board, depth: number, alpha: number, beta: number,
   maxing: boolean, lr: number, lc: number, ls: Stone
@@ -120,11 +153,9 @@ function minimax(
   if (ls && checkWin(b,lr,lc,ls)) return ls === WHITE ? 900000+depth : -900000-depth;
   if (depth === 0) return evalBoard(b);
   const s: Stone = maxing ? WHITE : BLACK;
-  const cands = getCands(b)
-    .map(([r,c]) => ({ r, c, t: threatAt(b,r,c,WHITE) - threatAt(b,r,c,BLACK) }))
-    .sort((a,z) => maxing ? z.t-a.t : a.t-z.t)
-    .slice(0, 15);
-  if (!cands.length) return evalBoard(b);
+  const raw = getCands(b);
+  if (!raw.length) return evalBoard(b);
+  const cands = sortCands(b, raw, maxing, 20);
   if (maxing) {
     let v = -Infinity;
     for (const {r,c} of cands) {
@@ -152,7 +183,7 @@ function findMove(b: Board, diff: Diff): [number,number] {
   const cands = getCands(b);
   if (!cands.length) return [7,7];
 
-  // First AI move: near center
+  // 첫 수: 중앙 근처
   if (b.every(row => row.every(c => !c))) {
     const off = diff === "easy" ? 2 : 1;
     return [
@@ -161,21 +192,24 @@ function findMove(b: Board, diff: Diff): [number,number] {
     ];
   }
 
-  // Immediate win / block
-  const win   = quickWin(b, WHITE); if (win)   return win;
-  const block = quickWin(b, BLACK); if (block) return block;
+  // AI 즉시 승리
+  const win = quickWin(b, WHITE);
+  if (win) return win;
 
-  // Easy: random 40% of the time
+  // 상대 즉시 승리 위치가 2개 이상 = 열린 4 → 둘 다 막을 수 없으나 일단 하나 막음
+  const playerWins = winCount(b, BLACK);
+  if (playerWins >= 1) {
+    const block = quickWin(b, BLACK);
+    if (block) return block;
+  }
+
+  // 쉬움: 40% 랜덤
   if (diff === "easy" && Math.random() < 0.4)
     return cands[Math.floor(Math.random() * Math.min(cands.length, 10))];
 
-  const depth = diff === "easy" ? 1 : diff === "medium" ? 3 : 4;
+  const depth = diff === "easy" ? 1 : diff === "medium" ? 3 : 5;
 
-  const sorted = cands
-    .map(([r,c]) => ({ r, c, t: threatAt(b,r,c,WHITE) - threatAt(b,r,c,BLACK)*0.85 }))
-    .sort((a,z) => z.t - a.t)
-    .slice(0, 20);
-
+  const sorted = sortCands(b, cands, true, 22);
   let best = -Infinity;
   let bestMove: [number,number] = [sorted[0].r, sorted[0].c];
 
