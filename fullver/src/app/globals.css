@@ -640,6 +640,38 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   .ladder-counts {
     grid-template-columns: repeat(3, 1fr);
   }
+  .ladder-board-panel {
+    padding: 16px 14px;
+  }
+  .ladder-board-head {
+    margin-bottom: 10px;
+  }
+  .ladder-canvas-wrap {
+    overflow-x: hidden;
+    border-radius: 12px;
+  }
+  .ladder-svg {
+    min-width: 0;
+    width: 100%;
+  }
+  .ladder-vertical,
+  .ladder-rung {
+    stroke-width: 4;
+  }
+  .ladder-route {
+    stroke-width: 7;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,.12));
+  }
+  .ladder-route.revealed {
+    stroke-width: 5;
+  }
+  .ladder-svg-label,
+  .ladder-svg-prize {
+    font-size: 17px;
+  }
+  .ladder-svg-prize {
+    font-size: 16px;
+  }
   .ladder-actions {
     align-items: stretch;
   }
@@ -649,9 +681,14 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   }
   .ladder-results {
     grid-template-columns: 1fr;
+    gap: 6px;
+    margin-top: 8px;
   }
-  .ladder-svg {
-    min-width: 680px;
+  .ladder-result {
+    min-height: 34px;
+    padding: 6px 9px;
+    border-radius: 10px;
+    font-size: 12px;
   }
 }
 
