@@ -398,6 +398,58 @@ npm run build
 저녁 메뉴 후보 저장/최근 선택 제외 같은 기능이 필요하면 localStorage 또는 DB 테이블을 추가하면 된다.
 ```
 
+## 2026-06-03 Codex 추가 작업: 공굴리기
+
+요구사항:
+
+```text
+무료여야 함
+Vercel 무료 플랜 영향이 적어야 함
+공 갯수와 누구 공인지 입력하는 칸 필요
+모바일 화면에서 보기 좋아야 함
+```
+
+반영 내용:
+
+- `/plinko` 페이지 추가
+- `AppShell` 기본 메뉴에 `공굴리기` 추가
+- 2~8개 공 갯수 선택
+- 공별 소유자 입력
+- 먼저 떨어진 순서대로 받을 당첨 항목 입력
+- Start 클릭 시 공들이 장애물 사이를 내려가는 SVG 애니메이션 실행
+- 도착 시간이 빠른 순서대로 결과 배정
+- DB/API 없이 클라이언트 전용 기능으로 구현
+
+관련 파일:
+
+```text
+src/components/AppShell.tsx
+src/app/plinko/page.tsx
+src/app/plinko/PlinkoClient.tsx
+src/app/globals.css
+```
+
+검증:
+
+```bash
+npm run lint -- --no-cache
+npm run build
+```
+
+추가 확인:
+
+- build output에 `/plinko` 라우트 포함 확인
+- `next start --port 3004` 기준 `/login` 200 확인
+- 로컬 JWT 쿠키로 `/plinko` 200 확인
+
+주의:
+
+```text
+현재 공굴리기는 실제 물리엔진이 아니라 SVG 경로 애니메이션 기반이다.
+무료/저부하/모바일 안정성을 우선한 구현이다.
+결과는 저장하지 않는다.
+```
+
 1. 운영 UI에서 `분류 규칙` 목록 필터를 추가하는 것을 권장
    - 현재 목록에는 구분 배지가 보이지만, 규칙이 많아지면 출금/입금 필터가 필요할 수 있음
 
