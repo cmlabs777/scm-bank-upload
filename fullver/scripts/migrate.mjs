@@ -138,5 +138,23 @@ await client.query(`
   CREATE INDEX IF NOT EXISTS idx_ddays_date ON ddays(target_date);
 `);
 
+await client.query(`
+  CREATE TABLE IF NOT EXISTS fortune_profiles (
+    id            SERIAL PRIMARY KEY,
+    slot          TEXT NOT NULL UNIQUE CHECK(slot IN ('me','partner')),
+    display_name  TEXT NOT NULL DEFAULT '',
+    birth_date    DATE,
+    birth_time    TIME,
+    calendar_type TEXT NOT NULL DEFAULT 'solar' CHECK(calendar_type IN ('solar','lunar')),
+    gender        TEXT NOT NULL DEFAULT 'unspecified' CHECK(gender IN ('male','female','unspecified')),
+    enabled       BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  INSERT INTO fortune_profiles (slot, display_name)
+  VALUES ('me', '나'), ('partner', '배우자')
+  ON CONFLICT (slot) DO NOTHING;
+`);
+
 console.log("✓ Tables created (or already exist)");
 await client.end();

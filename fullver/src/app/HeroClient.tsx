@@ -13,6 +13,26 @@ interface DDay {
   color: string;
 }
 
+interface DailyFortune {
+  score: number;
+  headline: string;
+  summary: string;
+  advice: string;
+  lucky_color: string;
+  lucky_item: string;
+}
+
+interface FortuneProfile {
+  slot: "me" | "partner";
+  display_name: string;
+  birth_date: string | null;
+  birth_time: string | null;
+  calendar_type: "solar" | "lunar";
+  gender: "male" | "female" | "unspecified";
+  enabled: boolean;
+  fortune: DailyFortune | null;
+}
+
 const COLORS = [
   "#c4572a", "#1a73e8", "#1e8e3e", "#7c3aed",
   "#dc2626", "#0891b2", "#b45309", "#be185d",
@@ -80,6 +100,7 @@ function hexToRgba(hex: string, alpha: number) {
 
 export default function HeroClient({ currentUserId }: { currentUserId: number }) {
   const [ddays,   setDDays]   = useState<DDay[]>([]);
+  const [fortunes, setFortunes] = useState<FortuneProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [tick,    setTick]    = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -96,6 +117,11 @@ export default function HeroClient({ currentUserId }: { currentUserId: number })
         .then((d: DDay[]) => { setDDays(d); })
         .catch(() => {})
         .finally(() => setLoading(false));
+
+      fetch("/api/fortune")
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then((data: { profiles: FortuneProfile[] }) => { setFortunes(data.profiles || []); })
+        .catch(() => {});
     }, 0);
     return () => window.clearTimeout(timer);
   }, [tick]);
@@ -202,6 +228,46 @@ export default function HeroClient({ currentUserId }: { currentUserId: number })
             </div>
           );
         })}
+      </div>
+
+      {/* ── 오늘의 운세 섹션 ── */}
+      <div className="fortune-section">
+        <div className="hero-section-hd">
+          <span className="hero-section-title">오늘의 운세</span>
+        </div>
+        <div className="fortune-grid">
+          {fortunes.length === 0 && (
+            <div className="fortune-card fortune-card-empty">
+              <p className="fortune-name">운세 설정이 필요해요</p>
+              <p className="fortune-summary">관리자 화면에서 나와 배우자의 생년월일을 입력하면 매일 운세가 표시됩니다.</p>
+            </div>
+          )}
+          {fortunes.map(profile => (
+            <div key={profile.slot} className="fortune-card">
+              <div className="fortune-top">
+                <div>
+                  <p className="fortune-kicker">{profile.slot === "me" ? "나" : "배우자"}</p>
+                  <p className="fortune-name">{profile.display_name || (profile.slot === "me" ? "나" : "배우자")}</p>
+                </div>
+                {profile.fortune && <span className="fortune-score">{profile.fortune.score}</span>}
+              </div>
+
+              {profile.fortune ? (
+                <>
+                  <p className="fortune-headline">{profile.fortune.headline}</p>
+                  <p className="fortune-summary">{profile.fortune.summary}</p>
+                  <p className="fortune-advice">{profile.fortune.advice}</p>
+                  <div className="fortune-lucky">
+                    <span>색 {profile.fortune.lucky_color}</span>
+                    <span>아이템 {profile.fortune.lucky_item}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="fortune-summary">관리자 화면에서 생년월일, 시간, 양음력, 성별을 입력해 주세요.</p>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── 바로가기 ── */}

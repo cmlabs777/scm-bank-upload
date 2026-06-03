@@ -278,6 +278,74 @@ scm/INCOME_INVESTMENT_PLAN.md
 
 ## Claude에게 남기는 추천 후속 작업
 
+## 2026-06-03 Codex 추가 작업: 홈 오늘의 운세
+
+요구사항:
+
+```text
+무료일 것
+Vercel 무료 플랜 영향이 적을 것
+관리자에서 생년월일/시간/양음력/성별 입력
+홈 화면 D-Day 하단에 나와 배우자 오늘의 운세 표시
+커밋과 배포까지 진행
+```
+
+반영 방향:
+
+- 외부 유료 API나 LLM 호출 없이 자체 규칙 기반 운세 엔진으로 구현
+- 생년월일, 태어난 시간, 양음력, 성별, 오늘 날짜를 seed로 사용
+- 같은 날짜에는 같은 운세가 나오고 다음날 자동으로 바뀜
+- 홈에서 `/api/fortune` 1회 호출만 추가되므로 Vercel 함수 영향은 작음
+- 매일 운세 결과를 DB에 적재하지 않고 즉시 계산
+
+관련 파일:
+
+```text
+src/lib/fortune.ts
+src/app/api/fortune/route.ts
+src/app/HeroClient.tsx
+src/app/admin/AdminClient.tsx
+src/app/globals.css
+src/types/index.ts
+scripts/migrate.mjs
+```
+
+DB 변경:
+
+```text
+fortune_profiles
+- slot: me | partner
+- display_name
+- birth_date
+- birth_time
+- calendar_type: solar | lunar
+- gender: male | female | unspecified
+- enabled
+- updated_at
+```
+
+검증:
+
+```bash
+npm run lint -- --no-cache
+npm run build
+npm run migrate
+```
+
+추가 확인:
+
+- `fortune_profiles` 기본 행 `me`, `partner` 생성 확인
+- 저장 SQL rollback 테스트 통과
+- `next start --port 3002` 기준 `/login` 200 확인
+- `next dev`에서는 Turbopack dev manifest 관련 간헐 500이 있었으나 production build/start는 정상
+
+주의:
+
+```text
+현재 운세는 엔터테인먼트용 규칙 기반 문구다.
+정밀 사주/만세력 해석이 필요하면 별도 오픈소스 엔진 또는 API 검토가 필요하다.
+```
+
 1. 운영 UI에서 `분류 규칙` 목록 필터를 추가하는 것을 권장
    - 현재 목록에는 구분 배지가 보이지만, 규칙이 많아지면 출금/입금 필터가 필요할 수 있음
 

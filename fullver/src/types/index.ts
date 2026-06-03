@@ -1,4 +1,7 @@
 export type Role = "admin" | "user";
+export type FortuneSlot = "me" | "partner";
+export type CalendarType = "solar" | "lunar";
+export type Gender = "male" | "female" | "unspecified";
 
 export interface User {
   id: number;
@@ -61,4 +64,15 @@ export interface JwtPayload {
   sub: number;
   email: string;
   role: Role;
+}
+
+export interface FortuneProfile {
+  slot: FortuneSlot;
+  display_name: string;
+  birth_date: string | null;
+  birth_time: string | null;
+  calendar_type: CalendarType;
+  gender: Gender;
+  enabled: boolean;
+  updated_at?: string;
 }

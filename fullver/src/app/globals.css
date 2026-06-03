@@ -368,6 +368,40 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
 
 .create-form { display: flex; flex-direction: column; gap: 12px; max-width: 400px; }
 
+.toggle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+}
+.toggle-row input { accent-color: var(--accent); }
+
+.fortune-admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fortune-admin-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--bg);
+}
+.fortune-admin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.fortune-admin-head h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
 /* ── Login ──────────────────────────────────────── */
 .login-shell {
   min-height: 100vh;
@@ -1614,6 +1648,92 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   z-index: 1;
 }
 
+/* ── 오늘의 운세 ── */
+.fortune-section {
+  margin-bottom: 28px;
+}
+.fortune-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.fortune-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.fortune-card-empty {
+  grid-column: 1 / -1;
+}
+.fortune-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.fortune-kicker {
+  margin: 0 0 3px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: .6px;
+}
+.fortune-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+.fortune-score {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-lt);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.fortune-headline {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.35;
+}
+.fortune-summary,
+.fortune-advice {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-sub);
+  line-height: 1.55;
+}
+.fortune-advice {
+  margin-top: 8px;
+  color: var(--text);
+}
+.fortune-lucky {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.fortune-lucky span {
+  padding: 5px 9px;
+  border-radius: 980px;
+  background: rgba(120,120,128,.10);
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 700;
+}
+
 /* ── 바로가기 ── */
 .hero-shortcuts { margin-top: 4px; }
 .hero-shortcut-grid {
@@ -1686,6 +1806,7 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   .hero-dday-num { font-size: 72px; }
   .hero-dday-today { font-size: 56px; }
   .hero-card { padding: 20px 20px 16px; }
+  .fortune-grid { grid-template-columns: 1fr; }
   .hero-shortcut-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .hero-shortcut { padding: 12px 6px; border-radius: 16px; }
   .hero-shortcut-icon { font-size: 22px; }
