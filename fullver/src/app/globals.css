@@ -20,7 +20,10 @@
 }
 
 /* ── Base ───────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* 모바일 기본 파란 번쩍임 제거 */
+}
 html, body { height: 100%; margin: 0; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
@@ -70,11 +73,13 @@ body {
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
-  transition: background .15s, color .15s;
+  transition: background .15s, color .15s, transform .1s;
   border-radius: 10px;
   margin-bottom: 2px;
+  touch-action: manipulation;
 }
 .nav-item:hover { background: rgba(0,0,0,.04); color: var(--text); }
+.nav-item:active { transform: scale(0.97); opacity: .8; transition: transform .05s, opacity .05s; }
 .nav-item.active {
   background: var(--accent-lt);
   color: var(--accent);
@@ -90,9 +95,11 @@ body {
   color: var(--text-muted);
   cursor: pointer;
   font-size: 13px;
-  transition: border-color .15s, color .15s, background .15s;
+  transition: border-color .15s, color .15s, background .15s, transform .12s;
+  touch-action: manipulation;
 }
 .logout-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+.logout-btn:active { transform: scale(0.95); opacity: .75; transition: transform .06s, opacity .06s; }
 
 .page-content {
   margin-left: var(--sidebar-w);
@@ -168,10 +175,12 @@ body {
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
-  transition: opacity .15s, box-shadow .15s;
+  transition: opacity .15s, box-shadow .15s, transform .12s cubic-bezier(.4,0,.2,1);
   box-shadow: 0 1px 6px rgba(196,87,42,.28);
+  touch-action: manipulation;
 }
 .solid-button:hover:not(:disabled) { opacity: .9; box-shadow: 0 4px 14px rgba(196,87,42,.36); }
+.solid-button:active:not(:disabled) { transform: scale(0.94); opacity: .82; transition: transform .06s, opacity .06s; }
 .solid-button:disabled { opacity: .4; cursor: default; box-shadow: none; }
 
 .small-button {
@@ -183,9 +192,11 @@ body {
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  transition: opacity .15s;
+  transition: opacity .15s, transform .12s cubic-bezier(.4,0,.2,1);
+  touch-action: manipulation;
 }
 .small-button:hover { opacity: .88; }
+.small-button:active { transform: scale(0.93); opacity: .75; transition: transform .06s, opacity .06s; }
 
 .text-button {
   background: none;
@@ -196,7 +207,10 @@ body {
   padding: 4px 8px;
   text-decoration: underline;
   text-underline-offset: 2px;
+  transition: opacity .15s;
+  touch-action: manipulation;
 }
+.text-button:active { opacity: .6; }
 
 .danger-button {
   padding: 5px 12px;
@@ -206,9 +220,11 @@ body {
   border-radius: 980px;
   cursor: pointer;
   font-size: 13px;
-  transition: background .15s;
+  transition: background .15s, transform .12s cubic-bezier(.4,0,.2,1);
+  touch-action: manipulation;
 }
 .danger-button:hover { background: var(--accent-lt); }
+.danger-button:active { transform: scale(0.93); opacity: .75; transition: transform .06s, opacity .06s; }
 
 /* ── Tab bar (iOS segmented control) ───────────── */
 .tab-bar {
@@ -268,7 +284,8 @@ tbody tr:nth-child(even) td { background: rgba(0,0,0,.013); }
 tr:hover td { background: rgba(0,0,0,.025) !important; }
 .row-new td { background: #f0faf2; }
 .row-dup td { opacity: .5; }
-.clickable-row { cursor: pointer; }
+.clickable-row { cursor: pointer; touch-action: manipulation; }
+.clickable-row:active td { background: rgba(0,0,0,.05) !important; transition: background .05s; }
 .amount-cell { text-align: right; font-variant-numeric: tabular-nums; }
 .note-cell { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .action-cell { display: flex; gap: 6px; align-items: center; }
@@ -487,7 +504,8 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   font-size: 13px;
   color: var(--text-sub);
   font-weight: 500;
-  transition: background .2s, color .2s, box-shadow .2s;
+  transition: background .2s, color .2s, box-shadow .2s, transform .1s;
+  touch-action: manipulation;
 }
 .filter-btn.active {
   background: var(--surface);
@@ -496,6 +514,7 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   box-shadow: 0 1px 5px rgba(0,0,0,.10);
 }
 .filter-btn:hover:not(.active) { color: var(--text); }
+.filter-btn:active { transform: scale(0.92); opacity: .75; transition: transform .06s, opacity .06s; }
 
 .ghost-button {
   padding: 7px 14px;
@@ -505,9 +524,11 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   cursor: pointer;
   font-size: 13px;
   color: var(--text-sub);
-  transition: border-color .15s, color .15s, background .15s;
+  transition: border-color .15s, color .15s, background .15s, transform .12s cubic-bezier(.4,0,.2,1);
+  touch-action: manipulation;
 }
 .ghost-button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+.ghost-button:active { transform: scale(0.94); opacity: .75; transition: transform .06s, opacity .06s; }
 
 .year-select {
   padding: 7px 10px;
@@ -854,7 +875,7 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
     display: block;
     padding: 5px 14px;
     border-radius: 10px;
-    transition: background .2s, transform .1s;
+    transition: background .2s, transform .12s cubic-bezier(.4,0,.2,1);
   }
   .bnav-item.active { color: var(--accent); }
   .bnav-item.active .bnav-icon {
@@ -862,6 +883,17 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   }
   /* Remove old top-line indicator */
   .bnav-item::before { display: none !important; }
+
+  /* 탭 누름 피드백 — 강하게 */
+  .bnav-item:active {
+    opacity: .55;
+    transition: opacity .05s;
+  }
+  .bnav-item:active .bnav-icon {
+    transform: scale(0.82);
+    background: rgba(196,87,42,0.26);
+    transition: transform .05s, background .05s;
+  }
 
   .bnav-label { font-size: 10px; font-weight: 600; letter-spacing: .1px; }
 }
@@ -905,10 +937,12 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   cursor: pointer;
   font-size: 18px;
   color: var(--text-sub);
-  transition: background .15s, border-color .15s;
+  transition: background .15s, border-color .15s, transform .1s;
   line-height: 1;
+  touch-action: manipulation;
 }
 .cal-nav-btn:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+.cal-nav-btn:active { transform: scale(0.88); opacity: .7; transition: transform .06s, opacity .06s; }
 .cal-today-btn {
   padding: 6px 12px;
   background: none;
@@ -918,9 +952,11 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   font-size: 13px;
   font-weight: 600;
   color: var(--text-sub);
-  transition: border-color .15s, color .15s, background .15s;
+  transition: border-color .15s, color .15s, background .15s, transform .1s;
+  touch-action: manipulation;
 }
 .cal-today-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+.cal-today-btn:active { transform: scale(0.93); opacity: .75; transition: transform .06s, opacity .06s; }
 
 /* Legend */
 .cal-legend {
@@ -977,9 +1013,11 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   cursor: pointer;
   transition: background .12s;
   overflow: hidden;
+  touch-action: manipulation;
 }
 .cal-cell:nth-child(7n) { border-right: none; }
 .cal-cell:hover { background: var(--bg); }
+.cal-cell:active { background: rgba(0,0,0,.06) !important; transition: background .04s; }
 .cal-cell-empty { background: rgba(0,0,0,.015); cursor: default; }
 .cal-cell-sel { background: rgba(26,115,232,.05) !important; }
 .cal-cell-today .cal-day-num { background: var(--accent); color: #fff !important; }
@@ -1193,11 +1231,13 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(196,87,42,.4);
-  transition: box-shadow .15s, transform .15s;
+  transition: box-shadow .15s, transform .12s cubic-bezier(.4,0,.2,1);
   z-index: 300;
   display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
 }
 .cal-fab:hover { box-shadow: 0 6px 24px rgba(196,87,42,.5); transform: scale(1.06); }
+.cal-fab:active { transform: scale(0.88); box-shadow: 0 2px 8px rgba(196,87,42,.3); transition: transform .06s, box-shadow .06s; }
 
 /* Desktop: FAB stays in lower-right without mobile nav offset */
 @media (min-width: 768px) {
@@ -1257,8 +1297,11 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   padding: 14px 16px;
   cursor: pointer;
   user-select: none;
+  transition: background .12s;
+  touch-action: manipulation;
 }
 .post-card-hd:hover { background: rgba(0,0,0,.02); }
+.post-card-hd:active { background: rgba(0,0,0,.06); transition: background .04s; }
 
 .post-card-main { flex: 1; min-width: 0; }
 
