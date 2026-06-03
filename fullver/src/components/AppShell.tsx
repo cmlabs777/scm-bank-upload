@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const NAV = [
-  { href: "/dashboard",    label: "대시보드", icon: "🏠" },
-  { href: "/transactions", label: "거래내역", icon: "📋" },
-  { href: "/report",       label: "리포트",   icon: "📊" },
-  { href: "/calendar",     label: "캘린더",   icon: "📅" },
+  { href: "/dashboard",    label: "홈",     icon: "🏠" },
+  { href: "/transactions", label: "내역",   icon: "📋" },
+  { href: "/report",       label: "리포트", icon: "📊" },
+  { href: "/calendar",     label: "캘린더", icon: "📅" },
+  { href: "/posts",        label: "게시판", icon: "📝" },
 ];
 
 export default function AppShell({ children, isAdmin }: { children: React.ReactNode; isAdmin?: boolean }) {
@@ -48,9 +49,9 @@ export default function AppShell({ children, isAdmin }: { children: React.ReactN
       {/* Page content */}
       <main className="page-content">{children}</main>
 
-      {/* Mobile bottom navigation */}
+      {/* Mobile bottom navigation — admin tab excluded (desktop sidebar only) */}
       <nav className="bottom-nav">
-        {navItems.map(({ href, label, icon }) => (
+        {navItems.filter(n => n.href !== "/admin").map(({ href, label, icon }) => (
           <Link key={href} href={href} className={`bnav-item${pathname.startsWith(href) ? " active" : ""}`}>
             <span className="bnav-icon">{icon}</span>
             <span className="bnav-label">{label}</span>

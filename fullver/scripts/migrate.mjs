@@ -112,5 +112,18 @@ await client.query(`
   CREATE INDEX IF NOT EXISTS idx_calendar_uid   ON calendar_events(user_id);
 `);
 
+await client.query(`
+  CREATE TABLE IF NOT EXISTS posts (
+    id         SERIAL PRIMARY KEY,
+    user_id    INTEGER NOT NULL,
+    title      TEXT NOT NULL,
+    content    TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
+  CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
+`);
+
 console.log("✓ Tables created (or already exist)");
 await client.end();

@@ -113,7 +113,8 @@ export default function TransactionsClient() {
 
   async function handleDelete(id: number) {
     if (!confirm("이 항목을 삭제하시겠습니까?")) return;
-    await fetch("/api/transactions", { method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id}) });
+    const res = await fetch("/api/transactions", { method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id}) });
+    if (!res.ok) { setError("삭제 오류"); return; }
     setRows(p=>p.filter(r=>r.id!==id));
   }
 

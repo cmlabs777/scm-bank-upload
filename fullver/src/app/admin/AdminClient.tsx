@@ -53,7 +53,7 @@ export default function AdminClient() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault(); setStatus("");
     const res  = await fetch("/api/users", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ email:email.trim(), password, role }) });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (data.ok) { setStatus("✓ 계정 생성 완료"); setEmail(""); setPassword(""); setRole("user"); loadUsers(); }
     else setStatus(data.error || "오류");
   }

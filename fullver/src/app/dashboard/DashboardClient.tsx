@@ -213,6 +213,7 @@ export default function DashboardClient() {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify([{ kind:manualForm.kind, month, traded_at, amount, type_name:manualForm.type_name, note:manualForm.note, upload_key }]),
       });
+      if (!res.ok) { setManualStatus("서버 오류"); return; }
       const data = await res.json();
       if (data.inserted > 0) {
         setManualStatus("✓ 저장 완료"); setManualForm(EMPTY_TX); await refreshKeys();
@@ -231,6 +232,7 @@ export default function DashboardClient() {
           unit_price:Number(investForm.unit_price)||0, quantity:Number(investForm.quantity)||0,
           amount:Number(investForm.amount)||0, fee:Number(investForm.fee)||0, return_rate:Number(investForm.return_rate)||0, note:investForm.note }),
       });
+      if (!res.ok) { setInvestStatus("서버 오류"); return; }
       const data = await res.json();
       if (data.ok) { setInvestStatus("✓ 저장 완료"); setInvestForm(EMPTY_INVEST); }
       else setInvestStatus("오류");

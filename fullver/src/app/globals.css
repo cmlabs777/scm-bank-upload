@@ -701,8 +701,27 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
     max-width: 100%;
   }
 
-  .page-header { margin-bottom: 18px; padding-bottom: 14px; }
+  .page-header { margin-bottom: 18px; padding-bottom: 14px; flex-wrap: wrap; gap: 8px; }
   .page-header h1 { font-size: 22px; }
+
+  /* Form fields — stack vertically on narrow screens */
+  .form-row { flex-direction: column; gap: 10px; }
+  .form-row .field { min-width: 0; width: 100%; }
+
+  /* Flexible amount inputs */
+  .amount-range-input { width: auto; flex: 1; min-width: 70px; }
+  .search-bar { flex-wrap: wrap; }
+
+  /* Month range picker wraps under page title */
+  .month-range-picker { margin-left: 0; width: 100%; justify-content: flex-start; }
+
+  /* Panels */
+  .panel { padding: 16px; }
+  .chart-panel { padding: 16px; }
+
+  /* Table always scrollable */
+  .table-wrap, .monthly-table-wrap { border-radius: 8px; }
+  td, th { padding: 8px 10px; font-size: 13px; }
 
   .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
   .card-value { font-size: 18px; }
@@ -1110,4 +1129,155 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   .cal-cell { min-height: 62px; }
   .cal-day-num { font-size: 11px; width: 22px; height: 22px; }
   .cal-chip { font-size: 10px; padding: 1px 3px; }
+}
+
+/* ═══════════════════════════════════════════════════
+   ── Posts (게시판) ────────────────────────────────
+   ═══════════════════════════════════════════════════ */
+
+.posts-wrap { padding-bottom: 24px; }
+
+.posts-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.posts-search {
+  flex: 1;
+  min-width: 160px;
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Post card */
+.post-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+.post-card:hover { box-shadow: var(--shadow-lg); }
+.post-card-open { box-shadow: var(--shadow-lg); }
+
+.post-card-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.post-card-hd:hover { background: rgba(0,0,0,.02); }
+
+.post-card-main { flex: 1; min-width: 0; }
+
+.post-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.post-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 980px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.post-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+.post-preview {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.post-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.post-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.post-chevron {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Post body (expanded) */
+.post-card-body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.post-content {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 14px 0 10px;
+  padding: 0;
+}
+.post-edited {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+.post-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+/* Write form textarea */
+.post-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  resize: vertical;
+  min-height: 160px;
+  line-height: 1.6;
+  transition: border-color .15s, box-shadow .15s;
+}
+.post-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(196,87,42,.10);
+}
+.post-status {
+  font-size: 13px;
+  color: var(--red);
+  margin: 0;
 }
