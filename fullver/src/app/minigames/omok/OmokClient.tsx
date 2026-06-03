@@ -95,7 +95,7 @@ function evalBoard(b: Board): number {
   return score;
 }
 
-// 한 교점을 놓았을 때 해당 라인들만 빠르게 스캔 (O(N), 정렬용)
+// 한 교점을 놓았을 때 해당 라인 강도 (항상 양수, 정렬 전용)
 function lineScore(b: Board, r: number, c: number, s: Stone): number {
   b[r][c] = s;
   let sc = 0;
@@ -107,10 +107,20 @@ function lineScore(b: Board, r: number, c: number, s: Stone): number {
     nr = r-dr; nc = c-dc;
     while (inB(nr,nc) && b[nr][nc] === s) { cnt++; nr-=dr; nc-=dc; }
     if (inB(nr,nc) && b[nr][nc] === EMPTY) open++;
-    sc += seqScore(cnt, open, s === WHITE);
+    if (cnt >= 5) sc += 900000;
+    else if (open > 0) {
+      if      (cnt === 4) sc += open === 2 ? 500000 : 25000;
+      else if (cnt === 3) sc += open === 2 ? 15000  : 1200;
+      else if (cnt === 2) sc += open === 2 ? 500    : 60;
+    }
   }
   b[r][c] = EMPTY;
   return sc;
+}
+
+// 수의 중요도: 공격 가치 + 방어 가치 (항상 양수 → 높을수록 먼저 탐색)
+function importance(b: Board, r: number, c: number): number {
+  return lineScore(b,r,c,WHITE) + lineScore(b,r,c,BLACK) * 0.9;
 }
 
 // 특정 돌 종류가 놓을 수 있는 즉시 승리 위치 개수
@@ -135,14 +145,11 @@ function quickWin(b: Board, s: Stone): [number,number]|null {
 }
 
 function sortCands(
-  b: Board, cands: [number,number][], maxing: boolean, limit: number
+  b: Board, cands: [number,number][], limit: number
 ): { r: number; c: number }[] {
   return cands
-    .map(([r,c]) => ({
-      r, c,
-      t: lineScore(b,r,c,WHITE) - lineScore(b,r,c,BLACK),
-    }))
-    .sort((a,z) => maxing ? z.t-a.t : a.t-z.t)
+    .map(([r,c]) => ({ r, c, t: importance(b,r,c) }))
+    .sort((a,z) => z.t - a.t)  // 중요도 내림차순 — 공격/방어 모두 상위 탐색
     .slice(0, limit);
 }
 
@@ -155,7 +162,7 @@ function minimax(
   const s: Stone = maxing ? WHITE : BLACK;
   const raw = getCands(b);
   if (!raw.length) return evalBoard(b);
-  const cands = sortCands(b, raw, maxing, 20);
+  const cands = sortCands(b, raw, 20);
   if (maxing) {
     let v = -Infinity;
     for (const {r,c} of cands) {
@@ -209,7 +216,7 @@ function findMove(b: Board, diff: Diff): [number,number] {
 
   const depth = diff === "easy" ? 1 : diff === "medium" ? 3 : 5;
 
-  const sorted = sortCands(b, cands, true, 22);
+  const sorted = sortCands(b, cands, 22);
   let best = -Infinity;
   let bestMove: [number,number] = [sorted[0].r, sorted[0].c];
 
