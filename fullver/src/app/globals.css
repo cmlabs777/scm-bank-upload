@@ -1426,3 +1426,267 @@ tr:hover td { background: rgba(0,0,0,.025) !important; }
   color: var(--red);
   margin: 0;
 }
+
+/* ═══════════════════════════════════════════════════
+   ── Hero (D-Day 홈 화면) ──────────────────────────
+   ═══════════════════════════════════════════════════ */
+
+.hero-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 20px;
+}
+
+/* ── 인사 영역 ── */
+.hero-greeting {
+  padding: 4px 0 20px;
+}
+.hero-date {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+  font-weight: 500;
+}
+.hero-hello {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -.5px;
+}
+
+/* ── 섹션 헤더 ── */
+.hero-section-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.hero-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.hero-add-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 980px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .1s;
+  touch-action: manipulation;
+}
+.hero-add-btn:hover { background: var(--accent-lt); border-color: var(--accent); }
+.hero-add-btn:active { transform: scale(0.94); opacity: .75; transition: transform .06s; }
+
+/* ── 빈 상태 ── */
+.hero-empty {
+  text-align: center;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.hero-empty-icon { font-size: 52px; line-height: 1; }
+.hero-empty-text { font-size: 18px; font-weight: 700; color: var(--text); margin: 0; }
+.hero-empty-sub  { font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.6; }
+
+/* ── D-Day 카드 목록 ── */
+.hero-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+/* ── D-Day 카드 ── */
+.hero-card {
+  border-radius: 24px;
+  padding: 22px 22px 18px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  transition: transform .15s, box-shadow .15s;
+  touch-action: manipulation;
+}
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -20px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  pointer-events: none;
+}
+.hero-card::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: 20px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+  pointer-events: none;
+}
+
+.hero-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.hero-card-emoji {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.hero-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero-card-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.hero-card-btn {
+  background: rgba(255,255,255,.2);
+  border: none;
+  border-radius: 980px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  touch-action: manipulation;
+  backdrop-filter: blur(4px);
+}
+.hero-card-btn:hover { background: rgba(255,255,255,.32); }
+.hero-card-btn:active { transform: scale(0.9); transition: transform .05s; }
+.hero-card-del { background: rgba(255,255,255,.12); }
+
+/* ── D-DAY 숫자 ── */
+.hero-dday-num {
+  display: block;
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -3px;
+  color: #fff;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+.hero-dday-today {
+  font-size: 52px;
+  letter-spacing: -2px;
+  text-shadow: 0 0 30px rgba(255,255,255,.5);
+}
+.hero-dday-past { opacity: .75; }
+
+.hero-card-date {
+  font-size: 14px;
+  color: rgba(255,255,255,.85);
+  margin: 0 0 4px;
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+.hero-card-past-msg {
+  font-size: 13px;
+  color: rgba(255,255,255,.75);
+  margin: 2px 0 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 바로가기 ── */
+.hero-shortcuts { margin-top: 4px; }
+.hero-shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.hero-shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: var(--surface);
+  border-radius: 18px;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  transition: box-shadow .15s, transform .12s cubic-bezier(.4,0,.2,1);
+  touch-action: manipulation;
+}
+.hero-shortcut:hover { box-shadow: var(--shadow-lg); }
+.hero-shortcut:active { transform: scale(0.9); opacity: .8; transition: transform .06s, opacity .06s; }
+.hero-shortcut-icon  { font-size: 24px; line-height: 1; }
+.hero-shortcut-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sub);
+  white-space: nowrap;
+}
+
+/* ── 이모지 & 색상 선택 ── */
+.hero-emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hero-emoji-btn {
+  width: 40px; height: 40px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, transform .1s;
+  touch-action: manipulation;
+}
+.hero-emoji-btn:hover { border-color: var(--accent); }
+.hero-emoji-btn:active { transform: scale(0.88); transition: transform .06s; }
+.hero-emoji-btn.selected { border-color: var(--accent); background: var(--accent-lt); }
+
+.hero-color-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero-color-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: border-color .15s, transform .1s;
+  touch-action: manipulation;
+}
+.hero-color-btn:active { transform: scale(0.85); transition: transform .06s; }
+.hero-color-btn.selected {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text);
+}
+
+/* ── 모바일 조정 ── */
+@media (max-width: 767px) {
+  .hero-hello { font-size: 24px; }
+  .hero-dday-num { font-size: 72px; }
+  .hero-dday-today { font-size: 56px; }
+  .hero-card { padding: 20px 20px 16px; }
+  .hero-shortcut-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .hero-shortcut { padding: 12px 6px; border-radius: 16px; }
+  .hero-shortcut-icon { font-size: 22px; }
+}

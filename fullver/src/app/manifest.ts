@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "SCM 가계부",
     short_name: "SCM",
     description: "수입·지출·투자를 한 곳에서 관리하는 가계부",
-    start_url: "/dashboard",
+    start_url: "/",
     display: "standalone",
     orientation: "portrait-primary",
     background_color: "#f5ece0",

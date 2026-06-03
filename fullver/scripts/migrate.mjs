@@ -125,5 +125,18 @@ await client.query(`
   CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
 `);
 
+await client.query(`
+  CREATE TABLE IF NOT EXISTS ddays (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL,
+    title       TEXT NOT NULL,
+    target_date DATE NOT NULL,
+    emoji       TEXT NOT NULL DEFAULT '📅',
+    color       TEXT NOT NULL DEFAULT '#c4572a',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_ddays_date ON ddays(target_date);
+`);
+
 console.log("✓ Tables created (or already exist)");
 await client.end();

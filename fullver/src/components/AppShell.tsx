@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const NAV = [
-  { href: "/dashboard",    label: "홈",     icon: "🏠" },
+  { href: "/",             label: "홈",     icon: "🏡" },
+  { href: "/dashboard",    label: "가계부", icon: "💰" },
   { href: "/transactions", label: "내역",   icon: "📋" },
   { href: "/report",       label: "리포트", icon: "📊" },
   { href: "/calendar",     label: "캘린더", icon: "📅" },
@@ -36,7 +37,7 @@ export default function AppShell({ children, isAdmin }: { children: React.ReactN
         <ul className="nav-list">
           {navItems.map(({ href, label, icon }) => (
             <li key={href}>
-              <Link href={href} className={`nav-item${pathname.startsWith(href) ? " active" : ""}`}>
+              <Link href={href} className={`nav-item${(href === "/" ? pathname === "/" : pathname.startsWith(href)) ? " active" : ""}`}>
                 <span>{icon}</span>
                 <span>{label}</span>
               </Link>
@@ -52,7 +53,7 @@ export default function AppShell({ children, isAdmin }: { children: React.ReactN
       {/* Mobile bottom nav — horizontally scrollable, all tabs visible */}
       <nav className="bottom-nav">
         {navItems.map(({ href, label, icon }) => (
-          <Link key={href} href={href} className={`bnav-item${pathname.startsWith(href) ? " active" : ""}`}>
+          <Link key={href} href={href} className={`bnav-item${(href === "/" ? pathname === "/" : pathname.startsWith(href)) ? " active" : ""}`}>
             <span className="bnav-icon">{icon}</span>
             <span className="bnav-label">{label}</span>
           </Link>
