@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Script from "next/script";
 
 interface SheetJsWorkbook {
@@ -246,7 +247,10 @@ export default function DashboardClient() {
     <>
       <Script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onLoad={()=>setXlsxReady(true)} />
 
-      <div className="page-header"><h1>대시보드</h1></div>
+      <div className="page-header">
+        <h1>거래 입력</h1>
+        <Link href="/transactions" className="ghost-button" style={{fontSize:13}}>가계부 보기 →</Link>
+      </div>
 
       <div className="tab-bar">
         <button className={`tab-btn${tab==="upload"?" active":""}`} onClick={()=>setTab("upload")}>📤 엑셀 업로드</button>
@@ -275,7 +279,16 @@ export default function DashboardClient() {
             </button>
           </div>
 
-          {status && <p className="summary">{status}</p>}
+          {status && (
+            <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:4}}>
+              <p className="summary" style={{margin:0}}>{status}</p>
+              {status.startsWith("✓") && (
+                <Link href="/transactions" className="solid-button" style={{padding:"6px 16px",fontSize:13,textDecoration:"none"}}>
+                  가계부에서 확인 →
+                </Link>
+              )}
+            </div>
+          )}
 
           {filteredRows.length>0 && (
             <div className="table-wrap">
@@ -345,7 +358,14 @@ export default function DashboardClient() {
                 <input value={manualForm.note} onChange={e=>setManualForm(f=>({...f,note:e.target.value}))} placeholder="메모" />
               </div>
             </div>
-            {manualStatus && <p className="summary">{manualStatus}</p>}
+            {manualStatus && (
+              <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                <p className="summary" style={{margin:0}}>{manualStatus}</p>
+                {manualStatus.startsWith("✓") && (
+                  <Link href="/transactions" className="ghost-button" style={{fontSize:13,textDecoration:"none"}}>가계부에서 확인 →</Link>
+                )}
+              </div>
+            )}
             <div className="toolbar end"><button type="submit" className="solid-button">저장</button></div>
           </form>
         </div>

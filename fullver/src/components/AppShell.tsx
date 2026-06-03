@@ -5,11 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 
 const NAV = [
   { href: "/",             label: "홈",     icon: "🏡" },
-  { href: "/dashboard",    label: "가계부", icon: "💰" },
-  { href: "/transactions", label: "내역",   icon: "📋" },
+  { href: "/transactions", label: "가계부", icon: "📒" },
   { href: "/report",       label: "리포트", icon: "📊" },
   { href: "/calendar",     label: "캘린더", icon: "📅" },
   { href: "/posts",        label: "게시판", icon: "📝" },
+  { href: "/dashboard",    label: "입력",   icon: "📤" },
 ];
 
 export default function AppShell({ children, isAdmin }: { children: React.ReactNode; isAdmin?: boolean }) {

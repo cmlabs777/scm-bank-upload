@@ -117,7 +117,7 @@ export default function ReportClient() {
     <>
       <div className="page-header">
         <h1>리포트</h1>
-        <div className="month-range-picker">
+        <div className="month-range-picker" style={{flexWrap:"wrap",gap:6}}>
           <select value={startMonth} onChange={e=>{ const v=e.target.value; setStartMonth(v); if(v>endMonth) setEndMonth(v); }} className="year-select">
             {MONTH_OPTS.map(m=><option key={m} value={m}>{m}</option>)}
           </select>

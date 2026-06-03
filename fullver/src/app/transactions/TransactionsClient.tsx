@@ -125,7 +125,10 @@ export default function TransactionsClient() {
 
   return (
     <>
-      <div className="page-header"><h1>거래내역</h1></div>
+      <div className="page-header">
+        <h1>가계부</h1>
+        <a href="/dashboard" className="ghost-button" style={{fontSize:13}}>+ 거래 입력</a>
+      </div>
 
       {/* ── 필터 바 ── */}
       <div className="filter-bar">
@@ -165,10 +168,13 @@ export default function TransactionsClient() {
       </form>
 
       {!loading && rows.length>0 && (
-        <div className="summary-cards" style={{gridTemplateColumns:"repeat(3,1fr)",marginBottom:16}}>
-          <div className="summary-card"><span className="card-label">건수</span><span className="card-value">{rows.length}건</span></div>
+        <div className="summary-cards" style={{gridTemplateColumns:"repeat(2,1fr)",marginBottom:16}}>
           <div className="summary-card income"><span className="card-label">입금 합계</span><span className="card-value">{totalIncome.toLocaleString()}원</span></div>
           <div className="summary-card expense"><span className="card-label">출금 합계</span><span className="card-value">{totalExpense.toLocaleString()}원</span></div>
+          <div className={`summary-card${totalIncome-totalExpense>=0?" income":" expense"}`} style={{gridColumn:"1/-1"}}>
+            <span className="card-label">순수익 (입금 - 출금)</span>
+            <span className="card-value">{(totalIncome-totalExpense).toLocaleString()}원</span>
+          </div>
         </div>
       )}
 

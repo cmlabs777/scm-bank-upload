@@ -21,9 +21,9 @@ const COLORS = [
 const EMOJIS = ["💍","🎂","✈️","🏖️","🎄","🎓","💼","🏠","👶","❤️","🎉","🌸","🎊","🏆","🌙","⭐"];
 
 const SHORTCUTS = [
-  { href: "/dashboard",    label: "가계부", icon: "💰" },
+  { href: "/transactions", label: "가계부", icon: "📒" },
+  { href: "/report",       label: "리포트", icon: "📊" },
   { href: "/calendar",     label: "캘린더", icon: "📅" },
-  { href: "/transactions", label: "내역",   icon: "📋" },
   { href: "/posts",        label: "게시판", icon: "📝" },
 ];
 
