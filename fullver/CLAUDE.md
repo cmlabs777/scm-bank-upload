@@ -506,6 +506,50 @@ npm run build
 - 기억력 카드: 같은 그림 맞추기식 간단 카드게임
 - 색깔 뽑기: 각 후보에 색을 붙이고 랜덤 색으로 결정
 
+## 2026-06-03 Codex 추가 작업: 공굴리기 리디자인
+
+요구사항:
+
+```text
+공굴리기가 PC/모바일에서 작동은 하지만 이미지 부분이 움직이지 않고 결과만 나와 재미가 없음
+퀄리티가 낮으니 아예 리디자인
+```
+
+반영 내용:
+
+- SVG `animateMotion` 의존 방식 제거
+- `requestAnimationFrame`으로 공 좌표를 직접 계산하는 방식으로 변경
+- 각 공을 `<circle cx cy>` 좌표 업데이트로 렌더링
+- PC/모바일 모두 공 움직임이 실제로 보이도록 개선
+- 게임판 UI 리디자인
+  - 상단 DROP ZONE 레일
+  - 보드 배경 그라데이션
+  - 장애물 halo/그림자
+  - 공 ring/label/shadow
+  - 진행 현황 `FINISH ORDER n/N`
+  - 은은한 경로 trail
+- 결과는 기존처럼 먼저 도착한 순서대로 배정
+
+관련 파일:
+
+```text
+src/app/minigames/plinko/PlinkoClient.tsx
+src/app/globals.css
+```
+
+검증:
+
+```bash
+npm run lint -- --no-cache
+npm run build
+```
+
+추가 확인:
+
+- `next start --port 3005` 기준 `/login` 200 확인
+- 로컬 JWT 쿠키로 `/minigames/plinko` 200 확인
+- 현재 세션에서는 브라우저 자동화 도구가 노출되지 않아 스크린샷 검증은 수행하지 못함
+
 1. 운영 UI에서 `분류 규칙` 목록 필터를 추가하는 것을 권장
    - 현재 목록에는 구분 배지가 보이지만, 규칙이 많아지면 출금/입금 필터가 필요할 수 있음
 

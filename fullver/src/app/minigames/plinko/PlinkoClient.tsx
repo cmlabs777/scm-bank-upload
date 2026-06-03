@@ -4,10 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type Stage = "setup" | "running" | "done";
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 interface BallRun {
   id: number;
   owner: string;
   color: string;
+  points: Point[];
   path: string;
   slot: number;
   duration: number;
@@ -15,22 +21,32 @@ interface BallRun {
   finishAt: number;
 }
 
+interface BallView {
+  id: number;
+  owner: string;
+  color: string;
+  x: number;
+  y: number;
+  progress: number;
+}
+
 interface ResultRow {
   rank: number;
   owner: string;
   prize: string;
   color: string;
+  finishAt: number;
 }
 
 const MIN_BALLS = 2;
 const MAX_BALLS = 8;
 const WIDTH = 760;
-const HEIGHT = 520;
-const TOP_Y = 42;
-const BOARD_TOP = 108;
-const BOARD_BOTTOM = 398;
-const SLOT_TOP = 418;
-const SIDE = 58;
+const HEIGHT = 560;
+const TOP_Y = 64;
+const BOARD_TOP = 116;
+const BOARD_BOTTOM = 420;
+const SLOT_TOP = 438;
+const SIDE = 62;
 const COLORS = ["#c4572a", "#1a73e8", "#1e8e3e", "#7c3aed", "#be185d", "#0891b2", "#b45309", "#4b5563"];
 const DEFAULT_OWNERS = ["나", "배우자", "손님 1", "손님 2", "손님 3", "손님 4", "손님 5", "손님 6"];
 const DEFAULT_PRIZES = ["치킨", "초밥", "파스타", "김치찌개", "쌀국수", "햄버거", "떡볶이", "샐러드"];
@@ -53,39 +69,81 @@ function pseudo(seed: number) {
   return x - Math.floor(x);
 }
 
-function makePath(index: number, count: number, slot: number) {
+function pointsToPath(points: Point[]) {
+  return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ");
+}
+
+function distance(a: Point, b: Point) {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+function easeDrop(t: number) {
+  const clamped = Math.max(0, Math.min(1, t));
+  return clamped < 0.72
+    ? clamped * clamped * (2.05 - clamped)
+    : 1 - Math.pow(1 - clamped, 2.4);
+}
+
+function pointAt(points: Point[], progress: number) {
+  if (points.length <= 1) return points[0] || { x: WIDTH / 2, y: TOP_Y };
+
+  const lengths = points.slice(1).map((point, index) => distance(points[index], point));
+  const total = lengths.reduce((sum, value) => sum + value, 0);
+  let target = Math.max(0, Math.min(total, total * progress));
+
+  for (let i = 0; i < lengths.length; i += 1) {
+    if (target <= lengths[i]) {
+      const from = points[i];
+      const to = points[i + 1];
+      const ratio = lengths[i] === 0 ? 0 : target / lengths[i];
+      return {
+        x: from.x + (to.x - from.x) * ratio,
+        y: from.y + (to.y - from.y) * ratio,
+      };
+    }
+    target -= lengths[i];
+  }
+
+  return points[points.length - 1];
+}
+
+function makePoints(index: number, count: number, slot: number) {
   const startX = slotX(index, count);
   const endX = slotX(slot, count);
-  const rows = 7;
-  const points = [[startX, TOP_Y]];
+  const rows = 9;
+  const points: Point[] = [{ x: startX, y: TOP_Y }];
 
   for (let row = 0; row < rows; row += 1) {
     const progress = (row + 1) / rows;
     const y = BOARD_TOP + progress * (BOARD_BOTTOM - BOARD_TOP);
     const drift = (endX - startX) * progress;
-    const wave = (pseudo(index * 17 + row * 9 + count) - 0.5) * 88;
-    const x = Math.max(SIDE, Math.min(WIDTH - SIDE, startX + drift + wave));
-    points.push([x, y]);
+    const sideHit = (pseudo(index * 41 + row * 13 + count) > 0.5 ? 1 : -1) * (42 + pseudo(row * 7 + index) * 34);
+    const wobble = Math.sin((row + 1) * 1.7 + index) * 24;
+    const x = Math.max(SIDE, Math.min(WIDTH - SIDE, startX + drift + sideHit + wobble));
+    points.push({ x, y });
   }
 
-  points.push([endX, SLOT_TOP + 22]);
-
-  return points.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  points.push({ x: endX, y: SLOT_TOP + 18 });
+  points.push({ x: endX, y: SLOT_TOP + 46 });
+  return points;
 }
 
 function makeRuns(owners: string[], prizes: string[]): { runs: BallRun[]; results: ResultRow[] } {
   const count = owners.length;
-  const usedSlots = Array.from({ length: count }, (_, i) => i).sort(() => Math.random() - 0.5);
+  const slots = Array.from({ length: count }, (_, i) => i).sort(() => Math.random() - 0.5);
+  const now = Date.now();
   const runs = owners.map((owner, index) => {
-    const duration = 1.65 + Math.random() * 1.1;
-    const delay = index * 0.14 + Math.random() * 0.18;
-    const slot = usedSlots[index] ?? index;
+    const duration = 2.45 + Math.random() * 1.15;
+    const delay = index * 0.28 + Math.random() * 0.16;
+    const slot = slots[index] ?? index;
+    const points = makePoints(index, count, slot);
 
     return {
-      id: Date.now() + index,
+      id: now + index,
       owner,
       color: COLORS[index % COLORS.length],
-      path: makePath(index, count, slot),
+      points,
+      path: pointsToPath(points),
       slot,
       duration,
       delay,
@@ -100,21 +158,22 @@ function makeRuns(owners: string[], prizes: string[]): { runs: BallRun[]; result
       owner: run.owner,
       prize: prizes[index] || `${index + 1}등`,
       color: run.color,
+      finishAt: run.finishAt,
     }));
 
   return { runs, results };
 }
 
 function pegRows(count: number) {
-  return Array.from({ length: 7 }, (_, row) => {
-    const pegCount = count + (row % 2 === 0 ? 1 : 2);
+  return Array.from({ length: 8 }, (_, row) => {
+    const pegCount = count + (row % 2 === 0 ? 2 : 3);
     return Array.from({ length: pegCount }, (_, col) => {
       const rowWidth = WIDTH - SIDE * 2;
       const x = SIDE + (col * rowWidth) / Math.max(1, pegCount - 1);
-      const offset = row % 2 === 0 ? 0 : rowWidth / Math.max(8, count * 3);
+      const offset = row % 2 === 0 ? 0 : rowWidth / Math.max(9, count * 3);
       return {
         x: Math.max(SIDE, Math.min(WIDTH - SIDE, x - offset)),
-        y: BOARD_TOP + ((row + 0.5) * (BOARD_BOTTOM - BOARD_TOP)) / 7,
+        y: BOARD_TOP + ((row + 0.58) * (BOARD_BOTTOM - BOARD_TOP)) / 8,
       };
     });
   }).flat();
@@ -127,17 +186,21 @@ export default function PlinkoClient() {
   const [stage, setStage] = useState<Stage>("setup");
   const [runs, setRuns] = useState<BallRun[]>([]);
   const [results, setResults] = useState<ResultRow[]>([]);
+  const [balls, setBalls] = useState<BallView[]>([]);
   const [visibleResults, setVisibleResults] = useState(0);
-  const timers = useRef<number[]>([]);
+  const raf = useRef<number | null>(null);
+  const startTime = useRef(0);
 
   const pegs = useMemo(() => pegRows(count), [count]);
   const canStart = owners.every(item => item.trim()) && prizes.every(item => item.trim());
 
-  useEffect(() => () => clearTimers(), []);
+  useEffect(() => () => stopAnimation(), []);
 
-  function clearTimers() {
-    timers.current.forEach(timer => window.clearTimeout(timer));
-    timers.current = [];
+  function stopAnimation() {
+    if (raf.current !== null) {
+      window.cancelAnimationFrame(raf.current);
+      raf.current = null;
+    }
   }
 
   function changeCount(value: number) {
@@ -149,10 +212,11 @@ export default function PlinkoClient() {
   }
 
   function reset() {
-    clearTimers();
+    stopAnimation();
     setStage("setup");
     setRuns([]);
     setResults([]);
+    setBalls([]);
     setVisibleResults(0);
   }
 
@@ -164,24 +228,44 @@ export default function PlinkoClient() {
     setPrizes(prev => prev.map((item, i) => (i === index ? value : item)));
   }
 
+  function animate(nextRuns: BallRun[], nextResults: ResultRow[]) {
+    const elapsed = (performance.now() - startTime.current) / 1000;
+    const nextBalls = nextRuns.map(run => {
+      const local = (elapsed - run.delay) / run.duration;
+      const progress = Math.max(0, Math.min(1, easeDrop(local)));
+      const point = pointAt(run.points, progress);
+      return { id: run.id, owner: run.owner, color: run.color, progress, ...point };
+    });
+
+    setBalls(nextBalls);
+    setVisibleResults(nextResults.filter(result => elapsed >= result.finishAt).length);
+
+    if (elapsed < Math.max(...nextRuns.map(run => run.finishAt)) + 0.35) {
+      raf.current = window.requestAnimationFrame(() => animate(nextRuns, nextResults));
+    } else {
+      setVisibleResults(nextResults.length);
+      setStage("done");
+      raf.current = null;
+    }
+  }
+
   function start() {
     if (!canStart) return;
-    clearTimers();
+    stopAnimation();
 
     const game = makeRuns(owners.map(item => item.trim()), prizes.map(item => item.trim()));
+    const initialBalls = game.runs.map(run => {
+      const point = pointAt(run.points, 0);
+      return { id: run.id, owner: run.owner, color: run.color, progress: 0, ...point };
+    });
+
     setRuns(game.runs);
     setResults(game.results);
+    setBalls(initialBalls);
     setVisibleResults(0);
     setStage("running");
-
-    const orderedFinishTimes = [...game.runs].sort((a, b) => a.finishAt - b.finishAt).map(run => run.finishAt);
-    orderedFinishTimes.forEach((time, index) => {
-      const timer = window.setTimeout(() => {
-        setVisibleResults(index + 1);
-        if (index === orderedFinishTimes.length - 1) setStage("done");
-      }, time * 1000);
-      timers.current.push(timer);
-    });
+    startTime.current = performance.now();
+    raf.current = window.requestAnimationFrame(() => animate(game.runs, game.results));
   }
 
   return (
@@ -252,55 +336,82 @@ export default function PlinkoClient() {
 
         <section className="panel plinko-board-panel">
           <div className="plinko-board-head">
-            <h2>결과</h2>
+            <div>
+              <h2>라이브 보드</h2>
+              <p>{stage === "running" ? "공이 내려가는 중입니다" : stage === "done" ? "도착 순서가 확정됐어요" : "Start를 누르면 시작됩니다"}</p>
+            </div>
             {stage === "done" && <span className="badge badge-income">완료</span>}
           </div>
 
-          <div className="plinko-board">
-            <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="plinko-svg" role="img" aria-label="공굴리기 보드">
-              <defs>
+          <div className="plinko-stage-card">
+            <div className="plinko-score-strip">
+              <span>FINISH ORDER</span>
+              <strong>{visibleResults}/{count}</strong>
+            </div>
+
+            <div className="plinko-board">
+              <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="plinko-svg" role="img" aria-label="공굴리기 보드">
+                <defs>
+                  <radialGradient id="plinkoGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#fff7ed" />
+                    <stop offset="70%" stopColor="#f8d8c8" />
+                    <stop offset="100%" stopColor="#c4572a" />
+                  </radialGradient>
+                  <linearGradient id="plinkoPanel" x1="0%" x2="100%" y1="0%" y2="100%">
+                    <stop offset="0%" stopColor="#fffaf5" />
+                    <stop offset="48%" stopColor="#ffffff" />
+                    <stop offset="100%" stopColor="#f4f7fb" />
+                  </linearGradient>
+                </defs>
+
+                <rect className="plinko-backdrop" x="18" y="18" width={WIDTH - 36} height={HEIGHT - 36} rx="34" />
+                <rect className="plinko-top-rail" x="88" y="38" width={WIDTH - 176} height="42" rx="21" />
+                <text className="plinko-top-text" x={WIDTH / 2} y="65" textAnchor="middle">DROP ZONE</text>
+
                 {runs.map(run => (
-                  <path key={`path-${run.id}`} id={`plinko-path-${run.id}`} d={run.path} />
+                  <path key={`trail-${run.id}`} className="plinko-trail" d={run.path} style={{ stroke: run.color }} />
                 ))}
-              </defs>
 
-              <rect className="plinko-backdrop" x="18" y="18" width={WIDTH - 36} height={HEIGHT - 36} rx="28" />
+                {pegs.map((peg, index) => (
+                  <g key={`peg-${index}`}>
+                    <circle className="plinko-peg-halo" cx={peg.x} cy={peg.y} r="14" />
+                    <circle className="plinko-peg" cx={peg.x} cy={peg.y} r="7" />
+                  </g>
+                ))}
 
-              {pegs.map((peg, index) => (
-                <circle key={`peg-${index}`} className="plinko-peg" cx={peg.x} cy={peg.y} r="8" />
-              ))}
+                {Array.from({ length: count }, (_, index) => (
+                  <g key={`slot-${index}`}>
+                    <rect
+                      className="plinko-slot"
+                      x={slotX(index, count) - Math.min(52, 220 / count)}
+                      y={SLOT_TOP + 30}
+                      width={Math.min(104, 440 / count)}
+                      height="58"
+                      rx="15"
+                    />
+                    <text className="plinko-slot-text" x={slotX(index, count)} y={SLOT_TOP + 66} textAnchor="middle">{index + 1}</text>
+                  </g>
+                ))}
 
-              {Array.from({ length: count }, (_, index) => (
-                <g key={`slot-${index}`}>
-                  <rect
-                    className="plinko-slot"
-                    x={slotX(index, count) - Math.min(52, 220 / count)}
-                    y={SLOT_TOP + 22}
-                    width={Math.min(104, 440 / count)}
-                    height="52"
-                    rx="14"
-                  />
-                  <text className="plinko-slot-text" x={slotX(index, count)} y={SLOT_TOP + 54} textAnchor="middle">{index + 1}</text>
-                </g>
-              ))}
+                {balls.length === 0 && (
+                  <g>
+                    <circle className="plinko-preview-ball" cx={WIDTH / 2} cy={HEIGHT / 2 - 18} r="25" />
+                    <text className="plinko-empty-text" x={WIDTH / 2} y={HEIGHT / 2 + 34} textAnchor="middle">
+                      공이 굴러갈 준비가 됐어요
+                    </text>
+                  </g>
+                )}
 
-              {runs.length === 0 && (
-                <text className="plinko-empty-text" x={WIDTH / 2} y={HEIGHT / 2} textAnchor="middle">
-                  Start를 누르면 공이 내려갑니다
-                </text>
-              )}
-
-              {runs.map(run => (
-                <g key={run.id}>
-                  <circle className="plinko-ball-shadow" r="16" fill={run.color} opacity=".18">
-                    <animateMotion dur={`${run.duration}s`} begin={`${run.delay}s`} fill="freeze" path={run.path} />
-                  </circle>
-                  <circle className="plinko-ball" r="13" fill={run.color}>
-                    <animateMotion dur={`${run.duration}s`} begin={`${run.delay}s`} fill="freeze" path={run.path} />
-                  </circle>
-                </g>
-              ))}
-            </svg>
+                {balls.map(ball => (
+                  <g key={ball.id} className="plinko-ball-group">
+                    <circle className="plinko-ball-shadow" cx={ball.x + 4} cy={ball.y + 6} r="18" fill={ball.color} opacity=".16" />
+                    <circle className="plinko-ball-ring" cx={ball.x} cy={ball.y} r="19" fill="none" style={{ stroke: ball.color }} />
+                    <circle className="plinko-ball" cx={ball.x} cy={ball.y} r="14" fill={ball.color} />
+                    <text className="plinko-ball-label" x={ball.x} y={ball.y + 4} textAnchor="middle">{ball.owner.slice(0, 1)}</text>
+                  </g>
+                ))}
+              </svg>
+            </div>
           </div>
 
           <div className="plinko-results">
